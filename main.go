@@ -324,10 +324,10 @@ type AudioMeta struct {
 	Duration                                          int64
 }
 
-//go:embed Botolo.ico
+//go:embed assets/Botolo.ico
 var botoloICO []byte
 
-//go:embed Botolo.png
+//go:embed assets/Botolo.png
 var botoloPNG []byte
 
 var (
