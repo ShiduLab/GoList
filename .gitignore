@@ -1,1 +1,18 @@
+# GoList! user/runtime files
+GoList.layout.json
+GoList.Botolo.ico
 
+# Local builds / release artifacts
+*.exe
+*.zip
+GoList_raw.exe
+
+# Temporary / editor / OS files
+*.tmp
+*.temp
+*.log
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
