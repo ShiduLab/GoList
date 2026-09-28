@@ -2342,10 +2342,11 @@ func htmlExport(path string, selected []int) error {
 	if len(selected) == 0 {
 		return fmt.Errorf("nessun attributo selezionato")
 	}
+	logo := base64.StdEncoding.EncodeToString(botoloPNG)
 	var b strings.Builder
 	b.WriteString("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>GoList! - ShiduLab</title>")
-	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}</style></head><body>")
-	b.WriteString("<div class=\"golist\">GoList!</div><div class=\"rule\"></div>")
+	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;width:98%}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.brand{display:flex;align-items:center;gap:9px;color:#8cc8ff;font-size:14px;font-weight:700;white-space:nowrap}.brand img{width:42px;height:42px;object-fit:contain}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}@media(max-width:700px){.topbar{align-items:flex-start}.brand{font-size:12px}.brand img{width:34px;height:34px}}</style></head><body>")
+	b.WriteString("<div class=\"topbar\"><div class=\"golist\">GoList!</div><div class=\"brand\"><img alt=\"Botolo ShiduLab\" src=\"data:image/png;base64," + logo + "\"><span>ShiduLab</span></div></div><div class=\"rule\"></div>")
 	b.WriteString("<div class=\"summary\"><span class=\"value\">" + strconv.Itoa(len(currentEntries)) + "</span> elementi")
 	weight := humanSize(totalListedSize(currentEntries, currentRecursive))
 	b.WriteString(" · peso totale <span class=\"value\">" + html.EscapeString(weight) + "</span>")
@@ -2366,7 +2367,6 @@ func htmlExport(path string, selected []int) error {
 		b.WriteString("</tr>")
 	}
 	b.WriteString("</tbody></table></div>")
-	logo := base64.StdEncoding.EncodeToString(botoloPNG)
 	b.WriteString("<div class=\"footer\"><span>ShiduLab 2002 - 2026</span><img alt=\"Botolo\" src=\"data:image/png;base64," + logo + "\"></div>")
 	b.WriteString("</body></html>")
 	return os.WriteFile(path, []byte(b.String()), 0644)
