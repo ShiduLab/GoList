@@ -503,9 +503,9 @@ func applyDarkControl(hwnd uintptr, class string) {
 	// Windows 10/11: DarkMode_Explorer viene ignorato sui sistemi che non lo supportano.
 	pSetWindowTheme.Call(hwnd, uintptr(unsafe.Pointer(wptr("DarkMode_Explorer"))), uintptr(unsafe.Pointer(wptr(""))))
 	if class == "SysListView32" {
-		pSendMessageW.Call(hwnd, LVM_SETBKCOLOR, 0, rgb(24, 24, 24))
-		pSendMessageW.Call(hwnd, LVM_SETTEXTBKCOLOR, 0, rgb(24, 24, 24))
-		pSendMessageW.Call(hwnd, LVM_SETTEXTCOLOR, 0, rgb(232, 232, 232))
+		pSendMessageW.Call(hwnd, LVM_SETBKCOLOR, 0, rgb(18, 18, 18))
+		pSendMessageW.Call(hwnd, LVM_SETTEXTBKCOLOR, 0, rgb(18, 18, 18))
+		pSendMessageW.Call(hwnd, LVM_SETTEXTCOLOR, 0, rgb(205, 205, 205))
 	}
 }
 
@@ -1841,7 +1841,7 @@ func setupTable() {
 		col := LVCOLUMN{Mask: LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, Fmt: c.Align, Cx: c.Width, PszText: txt, ISubItem: int32(i)}
 		pSendMessageW.Call(hwndTable, LVM_INSERTCOLUMNW, uintptr(i), uintptr(unsafe.Pointer(&col)))
 	}
-	ex := uintptr(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER)
+	ex := uintptr(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_DOUBLEBUFFER)
 	pSendMessageW.Call(hwndTable, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, ex)
 	loadTableLayout()
 	for i := range columns {
@@ -2896,7 +2896,7 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		createControl("BUTTON", "Esporta ▼", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 238, 48, 100, 28, hwnd, IDSave)
 		createControl("BUTTON", "Aggiungi menu Windows", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 346, 48, 180, 28, hwnd, IDAddContext)
 		createControl("BUTTON", "Rimuovi menu Windows", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 534, 48, 195, 28, hwnd, IDRemoveContext)
-		hwndTable = createControl("SysListView32", "", WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|WS_VSCROLL|WS_HSCROLL|LVS_REPORT|LVS_SHOWSELALWAYS, 12, 86, 820, 440, hwnd, IDTable)
+		hwndTable = createControl("SysListView32", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_VSCROLL|WS_HSCROLL|LVS_REPORT|LVS_SHOWSELALWAYS, 12, 86, 820, 440, hwnd, IDTable)
 		hwndHint = createControl("STATIC", "Trascina qui una cartella", WS_CHILD|WS_VISIBLE|SS_CENTER, 240, 286, 360, 28, hwnd, IDHint)
 		hwndStatus = createControl("STATIC", "Pronto.", WS_CHILD|WS_VISIBLE, 14, 530, 600, 18, hwnd, IDStatus)
 		hwndBrand = createControl("STATIC", "ShiduLab 2002 - 2026", WS_CHILD|WS_VISIBLE|SS_RIGHT, 650, 530, 190, 18, hwnd, IDBrand)
