@@ -56,6 +56,7 @@ const (
 	WM_DROPFILES         = 0x0233
 	WM_SETFONT           = 0x0030
 	WM_SETICON           = 0x0080
+	WM_MOUSEWHEEL        = 0x020A
 	WM_CTLCOLORSTATIC    = 0x0138
 	WM_CTLCOLOREDIT      = 0x0133
 	WM_CTLCOLORBTN       = 0x0135
@@ -85,6 +86,12 @@ const (
 	ICON_BIG             = 1
 	LR_DEFAULTCOLOR      = 0x0000
 	TRANSPARENT          = 1
+	MK_CONTROL           = 0x0008
+	FVIRTKEY             = 0x01
+	FCONTROL             = 0x08
+	VK_0                 = 0x30
+	VK_OEM_PLUS          = 0xBB
+	VK_OEM_MINUS         = 0xBD
 
 	LVS_REPORT            = 0x0001
 	LVS_SHOWSELALWAYS     = 0x0008
@@ -145,6 +152,9 @@ const (
 	IDExportTSV      = 3202
 	IDExportCSV      = 3203
 	IDExportJSON     = 3204
+	IDZoomIn         = 3300
+	IDZoomOut        = 3301
+	IDZoomReset      = 3302
 )
 
 type WNDCLASSEX struct {
@@ -215,6 +225,12 @@ type OPENFILENAME struct {
 type INITCOMMONCONTROLSEX struct {
 	DwSize uint32
 	DwICC  uint32
+}
+
+type ACCEL struct {
+	FVirt byte
+	Key   uint16
+	Cmd   uint16
 }
 
 type LVCOLUMN struct {
@@ -383,6 +399,10 @@ var (
 	pDestroyWindow            = user32.NewProc("DestroyWindow")
 	pEnableWindow             = user32.NewProc("EnableWindow")
 	pSetForegroundWindow      = user32.NewProc("SetForegroundWindow")
+	pCreateAcceleratorTableW   = user32.NewProc("CreateAcceleratorTableW")
+	pDestroyAcceleratorTable   = user32.NewProc("DestroyAcceleratorTable")
+	pTranslateAcceleratorW     = user32.NewProc("TranslateAcceleratorW")
+	pInvalidateRect            = user32.NewProc("InvalidateRect")
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pGlobalAlloc      = kernel32.NewProc("GlobalAlloc")
@@ -411,6 +431,8 @@ var (
 	pSetBkColor            = gdi32.NewProc("SetBkColor")
 	pSetBkMode             = gdi32.NewProc("SetBkMode")
 	pSetTextColor          = gdi32.NewProc("SetTextColor")
+	pCreateFontW           = gdi32.NewProc("CreateFontW")
+	pDeleteObject          = gdi32.NewProc("DeleteObject")
 	pSetWindowTheme        = uxtheme.NewProc("SetWindowTheme")
 	pDwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
 
@@ -428,6 +450,8 @@ var (
 	columnSavedWidths                                                                         []int32
 	hIconBig, hIconSmall                                                                      uintptr
 	hDarkBrush                                                                                 uintptr
+	hUIFont                                                                                    uintptr
+	uiZoom                                                                                     = 100
 	htmlDlgClassRegistered                                                                    bool
 	htmlDlgHwnd                                                                               uintptr
 	htmlDlgDone                                                                               bool
@@ -446,6 +470,66 @@ func wptr(s string) *uint16 {
 func utf16z(s string) []uint16 { return append(syscall.StringToUTF16(s), 0) }
 func loword(v uintptr) uint16  { return uint16(v & 0xffff) }
 
+func scaleUI(v int32) int32 {
+	return v * int32(uiZoom) / 100
+}
+
+func ensureUIFont() uintptr {
+	if hUIFont != 0 {
+		return hUIFont
+	}
+	height := -scaleUI(12)
+	hUIFont, _, _ = pCreateFontW.Call(
+		uintptr(int64(height)), 0, 0, 0, 400,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		uintptr(unsafe.Pointer(wptr("Segoe UI"))),
+	)
+	if hUIFont == 0 {
+		hUIFont, _, _ = pGetStockObject.Call(DEFAULT_GUI_FONT)
+	}
+	return hUIFont
+}
+
+func applyUIFont(hwnd uintptr) {
+	if hwnd != 0 {
+		pSendMessageW.Call(hwnd, WM_SETFONT, ensureUIFont(), 1)
+	}
+}
+
+func applyZoomToMainControls() {
+	if hwndMain == 0 {
+		return
+	}
+	getDlg := user32.NewProc("GetDlgItem")
+	for _, id := range []int{IDPath, IDBrowse, IDList, IDRecursive, IDCopy, IDDeleteList, IDSave, IDAddContext, IDRemoveContext, IDStatus, IDBrand, IDHint} {
+		h, _, _ := getDlg.Call(hwndMain, uintptr(id))
+		applyUIFont(h)
+	}
+	applyUIFont(hwndTable)
+	applyUIFont(hwndHeader)
+	onSize()
+	pInvalidateRect.Call(hwndMain, 0, 1)
+}
+
+func setUIZoom(z int) {
+	if z < 70 {
+		z = 70
+	}
+	if z > 250 {
+		z = 250
+	}
+	if z == uiZoom {
+		return
+	}
+	uiZoom = z
+	if hUIFont != 0 {
+		pDeleteObject.Call(hUIFont)
+		hUIFont = 0
+	}
+	applyZoomToMainControls()
+	setText(hwndStatus, fmt.Sprintf("Zoom %d%%", uiZoom))
+}
+
 func createControl(class, text string, style uint32, x, y, w, h int32, parent uintptr, id int) uintptr {
 	r, _, _ := pCreateWindowExW.Call(
 		0,
@@ -456,8 +540,7 @@ func createControl(class, text string, style uint32, x, y, w, h int32, parent ui
 		parent, uintptr(id), 0, 0,
 	)
 	if r != 0 {
-		font, _, _ := pGetStockObject.Call(DEFAULT_GUI_FONT)
-		pSendMessageW.Call(r, WM_SETFONT, font, 1)
+		applyUIFont(r)
 		applyDarkControl(r, class)
 	}
 	return r
@@ -2217,6 +2300,12 @@ func htmlDialogWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr
 		return 0
 	case WM_COMMAND:
 		switch int(loword(wParam)) {
+		case IDZoomIn:
+			setUIZoom(uiZoom + 10)
+		case IDZoomOut:
+			setUIZoom(uiZoom - 10)
+		case IDZoomReset:
+			setUIZoom(100)
 		case IDHTMLAll, IDHTMLNone:
 			state := uintptr(0)
 			if int(loword(wParam)) == IDHTMLAll {
@@ -2310,6 +2399,13 @@ func chooseExportColumns(formatLabel string) ([]int, bool) {
 	pEnableWindow.Call(hwndMain, 0)
 	pShowWindow.Call(hwnd, SW_SHOW)
 	pUpdateWindow.Call(hwnd)
+
+	accels := []ACCEL{
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_PLUS, Cmd: IDZoomIn},
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_MINUS, Cmd: IDZoomOut},
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_0, Cmd: IDZoomReset},
+	}
+	hAccel, _, _ := pCreateAcceleratorTableW.Call(uintptr(unsafe.Pointer(&accels[0])), uintptr(len(accels)))
 
 	var m MSG
 	for !htmlDlgDone {
@@ -2847,39 +2943,68 @@ func onSize() {
 	var rc RECT
 	pGetClientRect.Call(hwndMain, uintptr(unsafe.Pointer(&rc)))
 	w, h := rc.Right-rc.Left, rc.Bottom-rc.Top
-	if w < 760 {
-		w = 760
+	if w < scaleUI(760) {
+		w = scaleUI(760)
 	}
-	if h < 400 {
-		h = 400
+	if h < scaleUI(400) {
+		h = scaleUI(400)
 	}
-	pMoveWindow.Call(hwndPath, 12, 12, uintptr(w-390), 26, 1)
+
+	m := scaleUI(12)
+	row1Y, row1H := scaleUI(12), scaleUI(28)
+	row2Y, row2H := scaleUI(50), scaleUI(30)
+	tableY := scaleUI(90)
+	bottom := scaleUI(124)
+	statusY, statusH := h-scaleUI(30), scaleUI(20)
+
+	pathW := w - scaleUI(390)
+	if pathW < scaleUI(180) {
+		pathW = scaleUI(180)
+	}
+	pMoveWindow.Call(hwndPath, uintptr(m), uintptr(row1Y), uintptr(pathW), uintptr(row1H), 1)
+
 	getDlg := user32.NewProc("GetDlgItem")
 	move := func(id int, x, y, cw, ch int32) {
 		hw, _, _ := getDlg.Call(hwndMain, uintptr(id))
 		pMoveWindow.Call(hw, uintptr(x), uintptr(y), uintptr(cw), uintptr(ch), 1)
 	}
-	move(IDBrowse, w-368, 12, 92, 26)
-	move(IDList, w-268, 12, 92, 26)
-	move(IDRecursive, w-168, 15, 155, 24)
-	move(IDCopy, 12, 48, 100, 28)
-	move(IDDeleteList, 120, 48, 110, 28)
-	move(IDSave, 238, 48, 100, 28)
-	move(IDAddContext, 346, 48, 180, 28)
-	move(IDRemoveContext, 534, 48, 195, 28)
-	pMoveWindow.Call(hwndTable, 12, 86, uintptr(w-24), uintptr(h-120), 1)
-	hintW := int32(360)
-	hintH := int32(28)
+	move(IDBrowse, w-scaleUI(368), row1Y, scaleUI(92), row1H)
+	move(IDList, w-scaleUI(268), row1Y, scaleUI(92), row1H)
+	move(IDRecursive, w-scaleUI(168), row1Y+scaleUI(2), scaleUI(155), scaleUI(26))
+	move(IDCopy, m, row2Y, scaleUI(100), row2H)
+	move(IDDeleteList, scaleUI(120), row2Y, scaleUI(110), row2H)
+	move(IDSave, scaleUI(238), row2Y, scaleUI(100), row2H)
+	move(IDAddContext, scaleUI(346), row2Y, scaleUI(180), row2H)
+	move(IDRemoveContext, scaleUI(534), row2Y, scaleUI(195), row2H)
+
+	tableH := h - bottom
+	if tableH < scaleUI(120) {
+		tableH = scaleUI(120)
+	}
+	pMoveWindow.Call(hwndTable, uintptr(m), uintptr(tableY), uintptr(w-2*m), uintptr(tableH), 1)
+
+	hintW, hintH := scaleUI(360), scaleUI(30)
 	hintX := (w - hintW) / 2
-	hintY := 86 + (h-120-hintH)/2
+	hintY := tableY + (tableH-hintH)/2
 	pMoveWindow.Call(hwndHint, uintptr(hintX), uintptr(hintY), uintptr(hintW), uintptr(hintH), 1)
-	brandW := int32(190)
-	pMoveWindow.Call(hwndStatus, 14, uintptr(h-28), uintptr(w-brandW-42), 18, 1)
-	pMoveWindow.Call(hwndBrand, uintptr(w-brandW-14), uintptr(h-28), uintptr(brandW), 18, 1)
+
+	brandW := scaleUI(190)
+	pMoveWindow.Call(hwndStatus, uintptr(scaleUI(14)), uintptr(statusY), uintptr(w-brandW-scaleUI(42)), uintptr(statusH), 1)
+	pMoveWindow.Call(hwndBrand, uintptr(w-brandW-scaleUI(14)), uintptr(statusY), uintptr(brandW), uintptr(statusH), 1)
 }
 
 func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case WM_MOUSEWHEEL:
+		if uint16(wParam&0xffff)&MK_CONTROL != 0 {
+			delta := int16((wParam >> 16) & 0xffff)
+			if delta > 0 {
+				setUIZoom(uiZoom + 10)
+			} else if delta < 0 {
+				setUIZoom(uiZoom - 10)
+			}
+			return 0
+		}
 	case WM_CTLCOLORSTATIC, WM_CTLCOLOREDIT, WM_CTLCOLORBTN:
 		pSetTextColor.Call(wParam, rgb(232, 232, 232))
 		pSetBkColor.Call(wParam, rgb(30, 30, 30))
@@ -3109,8 +3234,20 @@ func main() {
 		if int32(r) <= 0 {
 			break
 		}
+		if hAccel != 0 {
+			if handled, _, _ := pTranslateAcceleratorW.Call(hwnd, hAccel, uintptr(unsafe.Pointer(&m))); handled != 0 {
+				continue
+			}
+		}
 		pTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))
 		pDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
+	}
+	if hAccel != 0 {
+		pDestroyAcceleratorTable.Call(hAccel)
+	}
+	if hUIFont != 0 {
+		pDeleteObject.Call(hUIFont)
+		hUIFont = 0
 	}
 	if hIconSmall != 0 {
 		pDestroyIcon.Call(hIconSmall)
