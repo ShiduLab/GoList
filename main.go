@@ -2400,12 +2400,6 @@ func chooseExportColumns(formatLabel string) ([]int, bool) {
 	pShowWindow.Call(hwnd, SW_SHOW)
 	pUpdateWindow.Call(hwnd)
 
-	accels := []ACCEL{
-		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_PLUS, Cmd: IDZoomIn},
-		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_MINUS, Cmd: IDZoomOut},
-		{FVirt: FVIRTKEY | FCONTROL, Key: VK_0, Cmd: IDZoomReset},
-	}
-	hAccel, _, _ := pCreateAcceleratorTableW.Call(uintptr(unsafe.Pointer(&accels[0])), uintptr(len(accels)))
 
 	var m MSG
 	for !htmlDlgDone {
@@ -3225,6 +3219,14 @@ func main() {
 	}
 	pShowWindow.Call(hwnd, SW_SHOW)
 	pUpdateWindow.Call(hwnd)
+
+	accels := []ACCEL{
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_PLUS, Cmd: IDZoomIn},
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_MINUS, Cmd: IDZoomOut},
+		{FVirt: FVIRTKEY | FCONTROL, Key: VK_0, Cmd: IDZoomReset},
+	}
+	hAccel, _, _ := pCreateAcceleratorTableW.Call(uintptr(unsafe.Pointer(&accels[0])), uintptr(len(accels)))
+
 	if startupExportFormat != "" {
 		runStartupExport()
 	}
