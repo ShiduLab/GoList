@@ -1,0 +1,42 @@
+name: Build GoList Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "main.go"
+      - "assets/**"
+      - ".github/workflows/build-windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+
+      - name: Build Windows x64
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags="-H windowsgui" -o "dist/GoList!.exe" main.go
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoList-Windows-x64
+          path: "dist/GoList!.exe"
+          if-no-files-found: error
