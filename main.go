@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,7 +23,7 @@ import (
 )
 
 const (
-	appTitle = "GoList!"
+	appTitle = "GoList! - ShiduLab"
 
 	WS_OVERLAPPED        = 0x00000000
 	WS_CAPTION           = 0x00C00000
@@ -55,6 +56,9 @@ const (
 	WM_DROPFILES         = 0x0233
 	WM_SETFONT           = 0x0030
 	WM_SETICON           = 0x0080
+	WM_CTLCOLORSTATIC    = 0x0138
+	WM_CTLCOLOREDIT      = 0x0133
+	WM_CTLCOLORBTN       = 0x0135
 	BM_GETCHECK          = 0x00F0
 	BM_SETCHECK          = 0x00F1
 	BST_CHECKED          = 1
@@ -80,6 +84,7 @@ const (
 	ICON_SMALL           = 0
 	ICON_BIG             = 1
 	LR_DEFAULTCOLOR      = 0x0000
+	TRANSPARENT          = 1
 
 	LVS_REPORT            = 0x0001
 	LVS_SHOWSELALWAYS     = 0x0008
@@ -89,6 +94,7 @@ const (
 	LVS_EX_DOUBLEBUFFER   = 0x00010000
 
 	LVM_FIRST                    = 0x1000
+	LVM_SETBKCOLOR               = LVM_FIRST + 1
 	LVM_DELETEALLITEMS           = LVM_FIRST + 9
 	LVM_GETCOLUMNWIDTH           = LVM_FIRST + 29
 	LVM_GETHEADER                = LVM_FIRST + 31
@@ -96,6 +102,8 @@ const (
 	LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54
 	LVM_SETCOLUMNORDERARRAY      = LVM_FIRST + 58
 	LVM_GETCOLUMNORDERARRAY      = LVM_FIRST + 59
+	LVM_SETTEXTCOLOR             = LVM_FIRST + 36
+	LVM_SETTEXTBKCOLOR           = LVM_FIRST + 38
 	LVM_SETITEMW                 = LVM_FIRST + 76
 	LVM_INSERTITEMW              = LVM_FIRST + 77
 	LVM_INSERTCOLUMNW            = LVM_FIRST + 97
@@ -339,6 +347,8 @@ var (
 	comdlg32 = syscall.NewLazyDLL("comdlg32.dll")
 	comctl32 = syscall.NewLazyDLL("comctl32.dll")
 	gdi32    = syscall.NewLazyDLL("gdi32.dll")
+	uxtheme   = syscall.NewLazyDLL("uxtheme.dll")
+	dwmapi    = syscall.NewLazyDLL("dwmapi.dll")
 
 	pRegisterClassExW         = user32.NewProc("RegisterClassExW")
 	pCreateWindowExW          = user32.NewProc("CreateWindowExW")
@@ -397,6 +407,12 @@ var (
 	pGetSaveFileNameW     = comdlg32.NewProc("GetSaveFileNameW")
 	pInitCommonControlsEx = comctl32.NewProc("InitCommonControlsEx")
 	pGetStockObject       = gdi32.NewProc("GetStockObject")
+	pCreateSolidBrush      = gdi32.NewProc("CreateSolidBrush")
+	pSetBkColor            = gdi32.NewProc("SetBkColor")
+	pSetBkMode             = gdi32.NewProc("SetBkMode")
+	pSetTextColor          = gdi32.NewProc("SetTextColor")
+	pSetWindowTheme        = uxtheme.NewProc("SetWindowTheme")
+	pDwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
 
 	contextMenuBusy                                                                           bool
 	hwndMain, hwndPath, hwndTable, hwndHeader, hwndRecursive, hwndStatus, hwndBrand, hwndHint uintptr
@@ -411,6 +427,7 @@ var (
 	columnVisible                                                                             []bool
 	columnSavedWidths                                                                         []int32
 	hIconBig, hIconSmall                                                                      uintptr
+	hDarkBrush                                                                                 uintptr
 	htmlDlgClassRegistered                                                                    bool
 	htmlDlgHwnd                                                                               uintptr
 	htmlDlgDone                                                                               bool
@@ -441,6 +458,7 @@ func createControl(class, text string, style uint32, x, y, w, h int32, parent ui
 	if r != 0 {
 		font, _, _ := pGetStockObject.Call(DEFAULT_GUI_FONT)
 		pSendMessageW.Call(r, WM_SETFONT, font, 1)
+		applyDarkControl(r, class)
 	}
 	return r
 }
@@ -452,6 +470,93 @@ func getText(hwnd uintptr) string {
 	buf := make([]uint16, n+1)
 	pGetWindowTextW.Call(hwnd, uintptr(unsafe.Pointer(&buf[0])), n+1)
 	return syscall.UTF16ToString(buf)
+}
+
+func rgb(r, g, b byte) uintptr {
+	return uintptr(r) | uintptr(g)<<8 | uintptr(b)<<16
+}
+
+func ensureDarkBrush() uintptr {
+	if hDarkBrush == 0 {
+		hDarkBrush, _, _ = pCreateSolidBrush.Call(rgb(30, 30, 30))
+	}
+	return hDarkBrush
+}
+
+func applyDarkTitlebar(hwnd uintptr) {
+	if hwnd == 0 {
+		return
+	}
+	enabled := int32(1)
+	for _, attr := range []uintptr{20, 19} {
+		r, _, _ := pDwmSetWindowAttribute.Call(hwnd, attr, uintptr(unsafe.Pointer(&enabled)), unsafe.Sizeof(enabled))
+		if r == 0 {
+			break
+		}
+	}
+}
+
+func applyDarkControl(hwnd uintptr, class string) {
+	if hwnd == 0 {
+		return
+	}
+	// Windows 10/11: DarkMode_Explorer viene ignorato sui sistemi che non lo supportano.
+	pSetWindowTheme.Call(hwnd, uintptr(unsafe.Pointer(wptr("DarkMode_Explorer"))), uintptr(unsafe.Pointer(wptr(""))))
+	if class == "SysListView32" {
+		pSendMessageW.Call(hwnd, LVM_SETBKCOLOR, 0, rgb(24, 24, 24))
+		pSendMessageW.Call(hwnd, LVM_SETTEXTBKCOLOR, 0, rgb(24, 24, 24))
+		pSendMessageW.Call(hwnd, LVM_SETTEXTCOLOR, 0, rgb(232, 232, 232))
+	}
+}
+
+func fullEntryPath(root string, e Entry) string {
+	if filepath.IsAbs(e.RelativePath) {
+		return filepath.Clean(e.RelativePath)
+	}
+	if root == "" {
+		return filepath.Clean(e.RelativePath)
+	}
+	return filepath.Clean(filepath.Join(root, e.RelativePath))
+}
+
+func exportCellForRoot(root string, e Entry, col int) string {
+	if col == 22 {
+		return fullEntryPath(root, e)
+	}
+	return tableCell(e, col)
+}
+
+func exportCell(e Entry, col int) string {
+	return exportCellForRoot(currentFolder, e, col)
+}
+
+func localFileURL(path string) string {
+	p := filepath.ToSlash(filepath.Clean(path))
+	if strings.HasPrefix(p, "//") {
+		parts := strings.SplitN(strings.TrimPrefix(p, "//"), "/", 2)
+		host := parts[0]
+		urlPath := "/"
+		if len(parts) == 2 {
+			urlPath += parts[1]
+		}
+		u := url.URL{Scheme: "file", Host: host, Path: urlPath}
+		return u.String()
+	}
+	if len(p) >= 2 && p[1] == ':' {
+		p = "/" + p
+	}
+	u := url.URL{Scheme: "file", Path: p}
+	return u.String()
+}
+
+func htmlExportCell(e Entry, col int) string {
+	value := exportCell(e, col)
+	escaped := html.EscapeString(value)
+	if col == 0 || col == 22 {
+		href := html.EscapeString(localFileURL(fullEntryPath(currentFolder, e)))
+		return "<a class=\"file-link\" href=\"" + href + "\">" + escaped + "</a>"
+	}
+	return escaped
 }
 
 func msgBox(text, title string, flags uintptr) int {
@@ -1507,7 +1612,7 @@ func renderTextColumns(root string, entries []Entry, selected []int) string {
 			if pos > 0 {
 				b.WriteString(" | ")
 			}
-			v := tableCell(e, i)
+			v := exportCellForRoot(root, e, i)
 			v = strings.NewReplacer("\r", " ", "\n", " ", "\t", " ").Replace(v)
 			b.WriteString(v)
 		}
@@ -1750,6 +1855,7 @@ func setupTable() {
 	h, _, _ := pSendMessageW.Call(hwndTable, LVM_GETHEADER, 0, 0)
 	hwndHeader = h
 	if hwndHeader != 0 {
+		applyDarkControl(hwndHeader, "SysHeader32")
 		headerWndProcCallback = syscall.NewCallback(headerWndProc)
 		idx := int32(GWLP_WNDPROC)
 		oldHeaderWndProc, _, _ = pSetWindowLongPtrW.Call(hwndHeader, uintptr(idx), headerWndProcCallback)
@@ -2030,7 +2136,7 @@ func saveDialogFor(ext string) string {
 		return ""
 	}
 	buf := make([]uint16, 32768)
-	copy(buf, syscall.StringToUTF16("GoList"+ext))
+	copy(buf, syscall.StringToUTF16("GoList!"+ext))
 	filter := label + "\x00" + pattern + "\x00\x00"
 	fu := append(utf16.Encode([]rune(filter)), 0)
 	defExt := strings.TrimPrefix(ext, ".")
@@ -2070,6 +2176,11 @@ func currentColumnOrder() []int {
 
 func htmlDialogWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case WM_CTLCOLORSTATIC, WM_CTLCOLOREDIT, WM_CTLCOLORBTN:
+		pSetTextColor.Call(wParam, rgb(232, 232, 232))
+		pSetBkColor.Call(wParam, rgb(30, 30, 30))
+		pSetBkMode.Call(wParam, TRANSPARENT)
+		return ensureDarkBrush()
 	case WM_CREATE:
 		htmlDlgHwnd = hwnd
 		createControl("STATIC", "Seleziona gli attributi da esportare in "+exportDlgFormatLabel+":", WS_CHILD|WS_VISIBLE, 20, 16, 650, 22, hwnd, 0)
@@ -2158,7 +2269,7 @@ func chooseExportColumns(formatLabel string) ([]int, bool) {
 		hInst, _, _ := pGetModuleHandleW.Call(0)
 		className := wptr("GoListHTMLExportClass")
 		cursor, _, _ := pLoadCursorW.Call(0, IDC_ARROW)
-		wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(htmlDialogWndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: COLOR_WINDOW + 1, LpszClassName: className, HIconSm: hIconSmall}
+		wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(htmlDialogWndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: ensureDarkBrush(), LpszClassName: className, HIconSm: hIconSmall}
 		if r, _, _ := pRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
 			return nil, false
 		}
@@ -2182,6 +2293,7 @@ func chooseExportColumns(formatLabel string) ([]int, bool) {
 	if hwnd == 0 {
 		return nil, false
 	}
+	applyDarkTitlebar(hwnd)
 	pEnableWindow.Call(hwndMain, 0)
 	pShowWindow.Call(hwnd, SW_SHOW)
 	pUpdateWindow.Call(hwnd)
@@ -2218,8 +2330,8 @@ func htmlExport(path string, selected []int) error {
 		return fmt.Errorf("nessun attributo selezionato")
 	}
 	var b strings.Builder
-	b.WriteString("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>GoList!</title>")
-	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}</style></head><body>")
+	b.WriteString("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>GoList! - ShiduLab</title>")
+	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}</style></head><body>")
 	b.WriteString("<div class=\"golist\">GoList!</div><div class=\"rule\"></div>")
 	b.WriteString("<div class=\"summary\"><span class=\"value\">" + strconv.Itoa(len(currentEntries)) + "</span> elementi")
 	weight := humanSize(totalListedSize(currentEntries, currentRecursive))
@@ -2236,7 +2348,7 @@ func htmlExport(path string, selected []int) error {
 	for _, e := range currentEntries {
 		b.WriteString("<tr>")
 		for _, i := range selected {
-			b.WriteString("<td>" + html.EscapeString(tableCell(e, i)) + "</td>")
+			b.WriteString("<td>" + htmlExportCell(e, i) + "</td>")
 		}
 		b.WriteString("</tr>")
 	}
@@ -2260,7 +2372,7 @@ func exportHeaders() []string {
 func exportRow(e Entry) []string {
 	r := make([]string, len(columns))
 	for i := range columns {
-		r[i] = tableCell(e, i)
+		r[i] = exportCell(e, i)
 	}
 	return r
 }
@@ -2304,7 +2416,7 @@ func selectedRow(e Entry, selected []int) []string {
 	out := make([]string, 0, len(selected))
 	for _, i := range selected {
 		if i >= 0 && i < len(columns) {
-			out = append(out, tableCell(e, i))
+			out = append(out, exportCell(e, i))
 		}
 	}
 	return out
@@ -2361,7 +2473,7 @@ func exportSelectedTo(path string, selected []int) error {
 			m := make(map[string]string, len(selected))
 			for pos, i := range selected {
 				if pos < len(attrs) && i >= 0 && i < len(columns) {
-					m[attrs[pos]] = tableCell(e, i)
+					m[attrs[pos]] = exportCell(e, i)
 				}
 			}
 			rows = append(rows, m)
@@ -2755,6 +2867,11 @@ func onSize() {
 
 func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case WM_CTLCOLORSTATIC, WM_CTLCOLOREDIT, WM_CTLCOLORBTN:
+		pSetTextColor.Call(wParam, rgb(232, 232, 232))
+		pSetBkColor.Call(wParam, rgb(30, 30, 30))
+		pSetBkMode.Call(wParam, TRANSPARENT)
+		return ensureDarkBrush()
 	case WM_CREATE:
 		hwndMain = hwnd
 		hwndPath = createControl("EDIT", "", WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_AUTOHSCROLL, 12, 12, 420, 26, hwnd, IDPath)
@@ -2950,7 +3067,7 @@ func main() {
 	cursor, _, _ := pLoadCursorW.Call(0, IDC_ARROW)
 	hIconBig = createIconFromICO(botoloICO, 32)
 	hIconSmall = createIconFromICO(botoloICO, 16)
-	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: COLOR_WINDOW + 1, LpszClassName: className, HIconSm: hIconSmall}
+	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: ensureDarkBrush(), LpszClassName: className, HIconSm: hIconSmall}
 	if r, _, _ := pRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
 		panic("RegisterClassExW")
 	}
@@ -2958,6 +3075,7 @@ func main() {
 	if hwnd == 0 {
 		panic("CreateWindowExW")
 	}
+	applyDarkTitlebar(hwnd)
 	if hIconBig != 0 {
 		pSendMessageW.Call(hwnd, WM_SETICON, ICON_BIG, hIconBig)
 	}
