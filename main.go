@@ -1867,6 +1867,21 @@ func refreshTable() {
 		return
 	}
 	pSendMessageW.Call(hwndTable, LVM_DELETEALLITEMS, 0, 0)
+	if len(currentEntries) == 0 {
+		pShowWindow.Call(hwndTable, SW_HIDE)
+		pShowWindow.Call(hwndHint, SW_SHOW)
+		if currentFolder == "" {
+			setText(hwndHint, "Trascina qui una cartella")
+			setText(hwndStatus, "Pronto.")
+		} else {
+			setText(hwndHint, "Nessun elemento da mostrare")
+			setText(hwndStatus, "Cartella vuota — "+currentFolder)
+		}
+		currentText = renderText(currentFolder, currentEntries)
+		return
+	}
+	pShowWindow.Call(hwndTable, SW_SHOW)
+	pShowWindow.Call(hwndHint, SW_HIDE)
 	for i, e := range currentEntries {
 		first := wptr(tableCell(e, 0))
 		item := LVITEM{Mask: LVIF_TEXT, IItem: int32(i), ISubItem: 0, PszText: first}
@@ -1880,7 +1895,6 @@ func refreshTable() {
 	currentText = renderText(currentFolder, currentEntries)
 	if currentFolder == "" {
 		setText(hwndStatus, "Pronto.")
-		pShowWindow.Call(hwndHint, SW_SHOW)
 	} else {
 		total := formatTotalDuration(totalAudioDuration(currentEntries))
 		weight := humanSize(totalListedSize(currentEntries, currentRecursive))
@@ -1889,7 +1903,6 @@ func refreshTable() {
 		} else {
 			setText(hwndStatus, fmt.Sprintf("%d elementi · %s — %s", len(currentEntries), weight, currentFolder))
 		}
-		pShowWindow.Call(hwndHint, SW_HIDE)
 	}
 }
 
@@ -2888,6 +2901,9 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		hwndStatus = createControl("STATIC", "Pronto.", WS_CHILD|WS_VISIBLE, 14, 530, 600, 18, hwnd, IDStatus)
 		hwndBrand = createControl("STATIC", "ShiduLab 2002 - 2026", WS_CHILD|WS_VISIBLE|SS_RIGHT, 650, 530, 190, 18, hwnd, IDBrand)
 		setupTable()
+		// Empty state: niente "griglia da foglio millimetrato" quando non c'è ancora una lista.
+		// La tabella compare solo quando esistono elementi da mostrare.
+		pShowWindow.Call(hwndTable, SW_HIDE)
 		pDragAcceptFiles.Call(hwnd, 1)
 		if currentFolder != "" {
 			setText(hwndPath, currentFolder)
