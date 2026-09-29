@@ -3282,22 +3282,26 @@ func htmlExport(path string, selected []int) error {
     }catch(e){return '';}
   }
   function rememberVolume(el){
+    // Solo il player attivo può aggiornare il volume globale del MediaFlow.
+    // Un elemento nascosto non deve mai riportarlo accidentalmente a 100%.
+    if(el!==active){return;}
     rememberedVolume=el.volume;
     rememberedMuted=el.muted;
   }
   audio.addEventListener('volumechange',function(){rememberVolume(audio);});
   video.addEventListener('volumechange',function(){rememberVolume(video);});
 
+  function stopMedia(el){
+    el.pause();
+    el.removeAttribute('src');
+    el.load();
+  }
+
   function choosePlayer(item){
     var next=videoExt[extension(item.href)]?video:audio;
-    if(active!==next){
-      active.pause();
-      active.removeAttribute('src');
-      active.load();
-      active.style.display='none';
-      active=next;
-      active.style.display='';
-    }
+    audio.style.display=next===audio?'':'none';
+    video.style.display=next===video?'':'none';
+    active=next;
     active.volume=rememberedVolume;
     active.muted=rememberedMuted;
     return active;
@@ -3339,6 +3343,12 @@ func htmlExport(path string, selected []int) error {
     if(!queue.length){return;}
     index=(pos+queue.length)%queue.length;
     var item=queue[index];
+
+    // Prima di cambiare brano azzera SEMPRE entrambi i motori media.
+    // Così una play() precedente non può rimanere viva dietro alla successiva.
+    stopMedia(audio);
+    stopMedia(video);
+
     var el=choosePlayer(item);
     now.textContent=(index+1)+' / '+queue.length+' · '+item.name;
     ext.href=item.href;
@@ -3387,12 +3397,14 @@ func htmlExport(path string, selected []int) error {
     }
   });
   document.getElementById('mfClose').addEventListener('click',function(){
-    active.pause();
+    audio.pause();
+    video.pause();
     overlay.classList.remove('open');
   });
   overlay.addEventListener('click',function(ev){
     if(ev.target===overlay){
-      active.pause();
+      audio.pause();
+      video.pause();
       overlay.classList.remove('open');
     }
   });
