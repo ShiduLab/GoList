@@ -128,6 +128,7 @@ const (
 	LVCF_SUBITEM    = 0x0008
 	LVCFMT_LEFT     = 0x0000
 	LVCFMT_RIGHT    = 0x0001
+	NM_RCLICK            = -5
 	LVN_COLUMNCLICK     = -108
 	HDN_DIVIDERDBLCLICKA = -305
 	HDN_BEGINTRACKA      = -306
@@ -507,8 +508,6 @@ var (
 	hwndMain, hwndPath, hwndTable, hwndHeader, hwndRecursive, hwndStatus, hwndBrand, hwndHint uintptr
 	oldHeaderWndProc                                                                          uintptr
 	headerWndProcCallback                                                                     uintptr
-	oldTableWndProc                                                                           uintptr
-	tableWndProcCallback                                                                      uintptr
 	currentFolder                                                                             string
 	currentEntries                                                                            []Entry
 	currentText                                                                               string
@@ -2040,15 +2039,6 @@ func headerWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	return r
 }
 
-func tableWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
-	if msg == WM_RBUTTONUP {
-		showEntryMenu()
-		return 0
-	}
-	r, _, _ := pCallWindowProcW.Call(oldTableWndProc, hwnd, uintptr(msg), wParam, lParam)
-	return r
-}
-
 func selectedEntryAtCursor() (int, POINT, bool) {
 	var screen POINT
 	pGetCursorPos.Call(uintptr(unsafe.Pointer(&screen)))
@@ -2414,10 +2404,7 @@ func setupTable() {
 		pSendMessageW.Call(hwndTable, LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(w))
 	}
 
-	tableWndProcCallback = syscall.NewCallback(tableWndProc)
 	idx := int32(GWLP_WNDPROC)
-	oldTableWndProc, _, _ = pSetWindowLongPtrW.Call(hwndTable, uintptr(idx), tableWndProcCallback)
-
 	h, _, _ := pSendMessageW.Call(hwndTable, LVM_GETHEADER, 0, 0)
 	hwndHeader = h
 	if hwndHeader != 0 {
@@ -3693,10 +3680,16 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 					}
 				}
 			}
-			if hdr.HwndFrom == hwndTable && int32(hdr.Code) == LVN_COLUMNCLICK {
-				nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
-				sortCurrent(int(nmlv.ISubItem))
-				return 0
+			if hdr.HwndFrom == hwndTable {
+				switch int32(hdr.Code) {
+				case NM_RCLICK:
+					showEntryMenu()
+					return 0
+				case LVN_COLUMNCLICK:
+					nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
+					sortCurrent(int(nmlv.ISubItem))
+					return 0
+				}
 			}
 		}
 
