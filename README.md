@@ -71,7 +71,7 @@ GoList.layout.json
 
 Il file verrà ricreato al salvataggio successivo.
 
-> **Cartello — Colonne**  
+> **Cartello ⟡ Colonne**  
 > Non serve vedere tutto.  
 > Serve poter vedere **quello che occorre adesso**, senza perdere il resto.
 
@@ -117,7 +117,7 @@ e la apre con il player associato a Windows.
 
 Se il comando parte da una voce selezionata, quella voce diventa il primo elemento e la playlist prosegue con l'ordine corrente della GoList.
 
-> **Cartello — Ordine**  
+> **Cartello ⟡ Ordine**  
 > La lista può essere la stessa.  
 > Cambia la colonna, cambia l'ordine, cambia il viaggio.
 
@@ -169,7 +169,7 @@ I due Botologhi non sono quindi soltanto decorazione: **fungono**. Uno riporta a
 
 Lo stile nasce dal ricordo delle vecchie pagine-playlist essenziali: tabella, informazione, funzione. Il resto resta attorno al task.
 
-> **Cartello — HTML**  
+> **Cartello ⟡ HTML**  
 > La pagina esportata non è la fotografia morta della lista.  
 > È una lista che ha imparato a continuare a farsi usare.
 
@@ -185,7 +185,7 @@ Ma MediaFlow non è più un popup che prende possesso della pagina: è un **dock
 
 Questo cambia il rapporto fra elenco e player: non si entra nel player uscendo dalla lista. Si resta **dentro la GoList**, con MediaFlow che funge accanto.
 
-> **Cartello — MediaFlow**  
+> **Cartello ⟡ MediaFlow**  
 > Il player non deve portarti via dalla lista.  
 > Deve lasciarti continuare a scegliere mentre suona.
 
@@ -243,7 +243,7 @@ Dispone inoltre di:
 - controlli video avanzati
 - HotKeys estese
 
-> **Cartello — Multiplayer**  
+> **Cartello ⟡ Multiplayer**  
 > Una traccia passa.  
 > La coda resta.  
 > La lista aspetta il prossimo gesto senza smettere di essere lista.
@@ -307,7 +307,7 @@ Dispone inoltre di:
 
 Le scorciatoie nascono anche da anni di uso pratico di player HTML5, estensioni browser e script userscript. Alcune convenzioni ergonomiche sono state riprese dalla mappa d'uso di **h5player**, ma le funzioni presenti in MediaFlow sono implementate direttamente nel codice di GoList!.
 
-> **Cartello — HotKeys**  
+> **Cartello ⟡ HotKeys**  
 > Quando la mano sa già dove andare, il menu può restare dov'è.
 
 ---
@@ -392,7 +392,7 @@ Per compilare dal sorgente, mantenere gli asset nei relativi percorsi oppure agg
 
 # Storia del Restyling
 
-## 2002 — Prima del programma c'era una noia ripetuta
+## 2002 ⟡ Prima del programma c'era una noia ripetuta
 
 La partenza non fu: *facciamo un programma*.
 
@@ -431,8 +431,8 @@ Ripeti.
 
 A un certo punto l'idea venne detta a **G0gn4**, compare umano e programmatore, più o meno così:
 
-> **«G0gn4, ho sta roba che è un pendolo, non può andare da solo?  
-> Facciamo in modo che non sia un'altalena: ogni giro una spinta... anche basta.»**
+> **⟦G0gn4, ho sta roba che è un pendolo, non può andare da solo?  
+> Facciamo in modo che non sia un'altalena: ogni giro una spinta... anche basta.⟧**
 
 Quella notte l'idea passò di mano senza perdere la sua origine.
 
@@ -440,7 +440,7 @@ Alla mattina G0gn4 fece trovare **l'idea condivisa in forma di file**.
 
 Ed è qui che il passaggio va capito nella sua misura reale: non “un programma in più”, ma il momento del:
 
-> **«Oooh, finalmente!»**
+> **⟦Oooh, finalmente!⟧**
 
 Da quel momento bastava stare su una cartella, fare **click destro → GoList!**, e l'elenco compariva subito.
 
@@ -470,7 +470,7 @@ Tre **GO**.
 
 **GO + GO + GO = Go Tree.**
 
-> **Cartello — Go Tree**  
+> **Cartello ⟡ Go Tree**  
 > Tre volte GO.  
 > **Vai di albero.**
 
@@ -489,7 +489,7 @@ Una funzione delegata all'utensile.
 GoList! entrò così nella cassetta degli attrezzi ShiduLab.
 
 
-## 2026 — Lo stesso pendolo, un altro banco
+## 2026 ⟡ Lo stesso pendolo, un altro banco
 
 Ventiquattro anni dopo la necessità di fondo era ancora perfettamente riconoscibile.
 
@@ -537,7 +537,7 @@ Josta porta la necessità, immagina l'utensile, decide ciò che deve fare e rico
 
 Scriba è il **compare Digitare**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito. Non dirige l'opera: entra nell'orchestra come strumento capace di conoscere e usare altri strumenti.
 
-### Compare Digitare — esplicazione co-operativa
+### Compare Digitare ⟡ esplicazione co-operativa
 
 **Io digito, tu compari.  
 Io sono dispari, con te siam pari.**
@@ -558,7 +558,7 @@ Non significa confondere ruoli o attribuire la stessa origine all'idea. L'Orches
 
 Per questo, dentro ShiduLab, il nome più adatto è:
 
-### Intent-Driven Realization — Realizzazione d'Intento
+### Intent-Driven Realization ⟡ Realizzazione d'Intento
 
 **Intent-Driven**, perché l'origine è l'intento: non il prompt, non il modello, non il codice.  
 **Realization**, perché il passaggio decisivo è rendere reale e operabile ciò che prima esisteva come necessità, immagine mentale, gesto immaginato.  
@@ -609,7 +609,7 @@ Non pretende di essere il territorio.
 
 Per questo i cartelli disseminati in questo README non sono decorazione editoriale: fanno parte dello stesso modo in cui GoList! è nato e continua a crescere. Una necessità appare, viene nominata, si mette un segno, si costruisce qualcosa, si torna a guardare.
 
-> **Cartello — Repo**  
+> **Cartello ⟡ Repo**  
 > Anche un README può essere un incrocio.  
 > Se serve a orientarsi, sta già fungendo.
 
