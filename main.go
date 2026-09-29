@@ -696,8 +696,8 @@ func exportSuccessWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uint
 		pSetBkMode.Call(wParam, TRANSPARENT)
 		return ensureDarkBrush()
 	case WM_CREATE:
-		createControl("STATIC", "Lista esportata in HTML.", WS_CHILD|WS_VISIBLE, 24, 24, 360, 24, hwnd, 0)
-		createControl("BUTTON", "Apri HTML", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 92, 72, 112, 30, hwnd, IDExportOpen)
+		createControl("STATIC", "Lista esportata in "+exportDlgFormatLabel+".", WS_CHILD|WS_VISIBLE, 24, 24, 360, 24, hwnd, 0)
+		createControl("BUTTON", "Apri "+exportDlgFormatLabel, WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 92, 72, 112, 30, hwnd, IDExportOpen)
 		createControl("BUTTON", "OK", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 216, 72, 92, 30, hwnd, IDExportClose)
 		return 0
 	case WM_COMMAND:
@@ -711,7 +711,7 @@ func exportSuccessWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uint
 					0, 0, SW_SHOWNORMAL,
 				)
 				if r <= 32 {
-					pMessageBoxW.Call(hwnd, uintptr(unsafe.Pointer(wptr("Non riesco ad aprire il file HTML."))), uintptr(unsafe.Pointer(wptr(appTitle))), MB_OK|MB_ICONERROR)
+					pMessageBoxW.Call(hwnd, uintptr(unsafe.Pointer(wptr("Non riesco ad aprire il file "+exportDlgFormatLabel+"."))), uintptr(unsafe.Pointer(wptr(appTitle))), MB_OK|MB_ICONERROR)
 					return 0
 				}
 			}
@@ -732,17 +732,18 @@ func exportSuccessWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uint
 	return r
 }
 
-func showHTMLExportSuccess(path string) {
+func showExportSuccess(path, ext string) {
 	if path == "" {
 		return
 	}
+	exportDlgFormatLabel = strings.ToUpper(strings.TrimPrefix(ext, "."))
 	if !exportSuccessClassRegistered {
 		hInst, _, _ := pGetModuleHandleW.Call(0)
 		className := wptr("GoListExportSuccessClass")
 		cursor, _, _ := pLoadCursorW.Call(0, IDC_ARROW)
 		wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(exportSuccessWndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: ensureDarkBrush(), LpszClassName: className, HIconSm: hIconSmall}
 		if r, _, _ := pRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
-			msgBox("Lista esportata in HTML.", appTitle, MB_OK|MB_ICONINFORMATION)
+			msgBox("Lista esportata in "+exportDlgFormatLabel+".", appTitle, MB_OK|MB_ICONINFORMATION)
 			return
 		}
 		exportSuccessClassRegistered = true
@@ -761,7 +762,7 @@ func showHTMLExportSuccess(path string) {
 		hwndMain, 0, hInst, 0,
 	)
 	if hwnd == 0 {
-		msgBox("Lista esportata in HTML.", appTitle, MB_OK|MB_ICONINFORMATION)
+		msgBox("Lista esportata in "+exportDlgFormatLabel+".", appTitle, MB_OK|MB_ICONINFORMATION)
 		return
 	}
 	applyDarkTitlebar(hwnd)
@@ -783,11 +784,7 @@ func showHTMLExportSuccess(path string) {
 }
 
 func notifyExportSuccess(path, ext string) {
-	if strings.EqualFold(ext, ".html") {
-		showHTMLExportSuccess(path)
-		return
-	}
-	msgBox("Lista esportata in "+strings.ToUpper(strings.TrimPrefix(ext, "."))+".", appTitle, MB_OK|MB_ICONINFORMATION)
+	showExportSuccess(path, ext)
 }
 
 func createIconFromICO(data []byte, desired int) uintptr {
