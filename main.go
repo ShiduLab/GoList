@@ -748,7 +748,11 @@ func htmlExportCell(e Entry, col int) string {
 	escaped := html.EscapeString(value)
 	if col == 0 || col == 22 {
 		href := html.EscapeString(localFileURL(fullEntryPath(currentFolder, e)))
-		return "<a class=\"file-link\" href=\"" + href + "\">" + escaped + "</a>"
+		className := "file-link"
+		if isMediaEntry(e) {
+			className += " media-link"
+		}
+		return "<a class=\"" + className + "\" href=\"" + href + "\" data-name=\"" + html.EscapeString(e.Name) + "\">" + escaped + "</a>"
 	}
 	return escaped
 }
@@ -3203,7 +3207,7 @@ func htmlExport(path string, selected []int) error {
 	logo := base64.StdEncoding.EncodeToString(botoloPNG)
 	var b strings.Builder
 	b.WriteString("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>GoList! - ShiduLab</title>")
-	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;width:98%}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.brand{display:flex;align-items:center;gap:9px;color:#8cc8ff;font-size:14px;font-weight:700;white-space:nowrap}.brand img{width:42px;height:42px;object-fit:contain}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}@media(max-width:700px){.topbar{align-items:flex-start}.brand{font-size:12px}.brand img{width:34px;height:34px}}</style></head><body>")
+	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;width:98%}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.brand{display:flex;align-items:center;gap:9px;color:#8cc8ff;font-size:14px;font-weight:700;white-space:nowrap}.brand img{width:42px;height:42px;object-fit:contain}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}.mf-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9999}.mf-overlay.open{display:flex}.mf-box{width:min(760px,92vw);background:#10102d;border:1px solid #409fff;border-radius:12px;padding:18px;box-shadow:0 18px 55px rgba(0,0,0,.55)}.mf-title{color:#ffbf00;font-weight:700;margin-bottom:6px}.mf-now{color:#8cc8ff;font-size:13px;overflow-wrap:anywhere;margin-bottom:12px}.mf-box audio,.mf-box video{width:100%;max-height:55vh;background:#000}.mf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.mf-actions button,.mf-actions a{border:1px solid #409fff;background:#000040;color:#fff;padding:7px 12px;border-radius:6px;text-decoration:none;cursor:pointer;font:inherit}.mf-actions button:hover,.mf-actions a:hover{border-color:#ffbf00;color:#ffbf00}@media(max-width:700px){.topbar{align-items:flex-start}.brand{font-size:12px}.brand img{width:34px;height:34px}}</style></head><body>")
 	b.WriteString("<div class=\"topbar\"><div class=\"golist\">GoList!</div><div class=\"brand\"><img alt=\"Botolo ShiduLab\" src=\"data:image/png;base64," + logo + "\"><span>ShiduLab</span></div></div><div class=\"rule\"></div>")
 	b.WriteString("<div class=\"summary\"><span class=\"value\">" + strconv.Itoa(len(currentEntries)) + "</span> elementi")
 	weight := humanSize(totalListedSize(currentEntries, currentRecursive))
@@ -3226,6 +3230,131 @@ func htmlExport(path string, selected []int) error {
 	}
 	b.WriteString("</tbody></table></div>")
 	b.WriteString("<div class=\"footer\"><span>ShiduLab 2002 - 2026</span><img alt=\"Botolo\" src=\"data:image/png;base64," + logo + "\"></div>")
+	b.WriteString(`<div id="mfOverlay" class="mf-overlay">
+<div class="mf-box">
+<div class="mf-title">GoList! MediaFlow</div>
+<div id="mfNow" class="mf-now"></div>
+<audio id="mfAudio" controls preload="metadata"></audio>
+<video id="mfVideo" controls preload="metadata" playsinline style="display:none"></video>
+<div class="mf-actions">
+<button type="button" id="mfPrev">◀ Precedente</button>
+<button type="button" id="mfToggle">Pausa / Play</button>
+<button type="button" id="mfNext">Successiva ▶</button>
+<a id="mfExternal" href="#">Apri esterno</a>
+<button type="button" id="mfClose">Chiudi</button>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var links=Array.prototype.slice.call(document.querySelectorAll('a.media-link'));
+  if(!links.length){return;}
+  var seen={};
+  var media=[];
+  links.forEach(function(a){
+    if(!seen[a.href]){
+      seen[a.href]=true;
+      media.push({href:a.href,name:a.getAttribute('data-name')||a.textContent||a.href});
+    }
+  });
+
+  var overlay=document.getElementById('mfOverlay');
+  var now=document.getElementById('mfNow');
+  var audio=document.getElementById('mfAudio');
+  var video=document.getElementById('mfVideo');
+  var ext=document.getElementById('mfExternal');
+  var index=0;
+  var queue=[];
+  var active=audio;
+  var rememberedVolume=1;
+  var rememberedMuted=false;
+  var videoExt={'.mp4':1,'.m4v':1,'.mkv':1,'.avi':1,'.mov':1,'.wmv':1,'.webm':1,'.mpeg':1,'.mpg':1,'.ts':1,'.m2ts':1,'.3gp':1};
+
+  function extension(href){
+    try{
+      var p=decodeURIComponent(new URL(href).pathname).toLowerCase();
+      var dot=p.lastIndexOf('.');
+      return dot>=0?p.slice(dot):'';
+    }catch(e){return '';}
+  }
+  function rememberVolume(el){
+    rememberedVolume=el.volume;
+    rememberedMuted=el.muted;
+  }
+  audio.addEventListener('volumechange',function(){rememberVolume(audio);});
+  video.addEventListener('volumechange',function(){rememberVolume(video);});
+
+  function choosePlayer(item){
+    var next=videoExt[extension(item.href)]?video:audio;
+    if(active!==next){
+      active.pause();
+      active.removeAttribute('src');
+      active.load();
+      active.style.display='none';
+      active=next;
+      active.style.display='';
+    }
+    active.volume=rememberedVolume;
+    active.muted=rememberedMuted;
+    return active;
+  }
+  function playAt(pos){
+    if(!queue.length){return;}
+    index=(pos+queue.length)%queue.length;
+    var item=queue[index];
+    var el=choosePlayer(item);
+    now.textContent=(index+1)+' / '+queue.length+' · '+item.name;
+    ext.href=item.href;
+    el.src=item.href;
+    el.volume=rememberedVolume;
+    el.muted=rememberedMuted;
+    el.load();
+    var p=el.play();
+    if(p&&p.catch){p.catch(function(){});}
+  }
+  function openFlow(clicked){
+    var at=media.findIndex(function(x){return x.href===clicked.href;});
+    if(at<0){at=0;}
+    if(media.length>1&&window.confirm('GoList! MediaFlow\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
+      queue=media.slice(at).concat(media.slice(0,at));
+    }else{
+      queue=[media[at]];
+    }
+    overlay.classList.add('open');
+    playAt(0);
+  }
+  links.forEach(function(a){
+    a.addEventListener('click',function(ev){
+      ev.preventDefault();
+      openFlow(a);
+    });
+  });
+  function next(){if(queue.length){playAt(index+1);}}
+  function prev(){if(queue.length){playAt(index-1);}}
+  audio.addEventListener('ended',next);
+  video.addEventListener('ended',next);
+  document.getElementById('mfNext').addEventListener('click',next);
+  document.getElementById('mfPrev').addEventListener('click',prev);
+  document.getElementById('mfToggle').addEventListener('click',function(){
+    if(active.paused){
+      var p=active.play();
+      if(p&&p.catch){p.catch(function(){});}
+    }else{
+      active.pause();
+    }
+  });
+  document.getElementById('mfClose').addEventListener('click',function(){
+    active.pause();
+    overlay.classList.remove('open');
+  });
+  overlay.addEventListener('click',function(ev){
+    if(ev.target===overlay){
+      active.pause();
+      overlay.classList.remove('open');
+    }
+  });
+})();
+</script>`)
 	b.WriteString("</body></html>")
 	return os.WriteFile(path, []byte(b.String()), 0644)
 }
