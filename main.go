@@ -3439,14 +3439,30 @@ func htmlExport(path string, selected []int) error {
   modeButton.addEventListener('click',function(){
     setShuffleMode(!shuffleMode);
   });
-  document.getElementById('mfToggle').addEventListener('click',function(){
+  function togglePlayback(){
     if(active.paused){
       var p=active.play();
       if(p&&p.catch){p.catch(function(){});}
     }else{
       active.pause();
     }
-  });
+  }
+
+  document.getElementById('mfToggle').addEventListener('click',togglePlayback);
+
+  // Barra spaziatrice = Play/Pause del MediaFlow.
+  // La intercettiamo in capture così non resta al browser il solo "segnale"
+  // Play/Pause senza che il comando arrivi davvero al player.
+  document.addEventListener('keydown',function(ev){
+    if(!overlay.classList.contains('open')){return;}
+    if(ev.ctrlKey||ev.altKey||ev.metaKey){return;}
+    if(ev.code!=='Space'&&ev.key!==' '&&ev.key!=='Spacebar'){return;}
+    var t=ev.target;
+    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)){return;}
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if(!ev.repeat){togglePlayback();}
+  },true);
   document.getElementById('mfClose').addEventListener('click',function(){
     audio.pause();
     video.pause();
