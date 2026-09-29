@@ -351,6 +351,34 @@ Un utensile del 2002 rimesso al lavoro nel 2026.
 
 ---
 
+## Dal Vibe Coding all'Intent-Driven Pair Engineering
+
+Quello che oggi viene chiamato **Vibe Coding** descrive bene una parte dell'accadere: esprimere in linguaggio naturale ciò che si vuole ottenere e usare un'AI per trasformare rapidamente quell'intento in codice funzionante.
+
+Nel restyling di GoList!, però, il *vibe* è soltanto l'innesco. Il metodo che si è formato nel lavoro reale è più preciso e più vicino a una bottega a due:
+
+> **Ho uno strumento che conosce gli strumenti. Io conosco l'intento.**
+
+Per questo, dentro ShiduLab, il nome più adatto è:
+
+### Intent-Driven Pair Engineering — Co-Ingegneria d'Intento
+
+**Intent-Driven**, perché il centro non è il prompt né il codice: è l'intento d'uso.  
+**Pair**, perché il lavoro avviene in coppia: Josta mantiene necessità, contesto, criterio e prova sul campo; Scriba naviga strumenti e codice, implementa, integra, controlla il repository e verifica le build.  
+**Engineering**, perché ogni passaggio deve rientrare nell'utensile senza romperne il resto.
+
+Il ciclo non è *chiedi → ricevi codice*. È:
+
+**necessità → intento → modifica → build → uso reale → osservazione → correzione → nuovo uso**
+
+È così che sono emerse molte delle funzioni del restyling. Non da una specifica scritta tutta prima, ma dall'utensile mentre tornava a lavorare: il click destro ha chiamato il menu; il test ha chiamato il multi-delete; l'HTML musicale ha chiamato MediaFlow; l'uso del player ha chiamato memoria del volume, Shuffle leggibile, HotKeys e resume.
+
+Il compare Digitare non sostituisce chi usa l'utensile e non decide cosa debba diventare. Riduce invece la distanza tra **vedere una necessità** e **provarne subito una forma funzionante**.
+
+Questa è la parentela col Vibe Coding e, insieme, la differenza: meno *vibe come delega*, più **intento condiviso, iterazione corta e verifica nell'uso**.
+
+---
+
 ## Arti e Mestieri
 
 GoList! sta da quella parte del banco dove **Arti e Mestieri** smettono di essere categorie separate.
