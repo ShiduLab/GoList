@@ -431,8 +431,8 @@ Ripeti.
 
 A un certo punto l'idea venne detta a **G0gn4**, compare umano e programmatore, più o meno così:
 
-> **⟦G0gn4, ho sta roba che è un pendolo, non può andare da solo?  
-> Facciamo in modo che non sia un'altalena: ogni giro una spinta... anche basta.⟧**
+> **“G0gn4, ho sta roba che è un pendolo, non può andare da solo?  
+> Facciamo in modo che non sia un'altalena: ogni giro una spinta... anche basta.”**
 
 Quella notte l'idea passò di mano senza perdere la sua origine.
 
@@ -440,7 +440,7 @@ Alla mattina G0gn4 fece trovare **l'idea condivisa in forma di file**.
 
 Ed è qui che il passaggio va capito nella sua misura reale: non “un programma in più”, ma il momento del:
 
-> **⟦Oooh, finalmente!⟧**
+> **“Oooh, finalmente!”**
 
 Da quel momento bastava stare su una cartella, fare **click destro → GoList!**, e l'elenco compariva subito.
 
