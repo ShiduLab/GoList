@@ -1141,6 +1141,27 @@ func applyID3Frame(meta *AudioMeta, id string, data []byte, extras *[]string) {
 				*extras = append(*extras, k+"="+v)
 			}
 		}
+	case "USLT", "ULT":
+		if v := decodeID3Comment(data); v != "" {
+			*extras = append(*extras, id+"="+v)
+		}
+	case "IPLS":
+		if v := text(); v != "" {
+			*extras = append(*extras, id+"="+v)
+		}
+	default:
+		// Non perdere i metadati che GoList! non ha ancora trasformato
+		// in una colonna dedicata: tutti i frame testuali ID3 restano
+		// comunque visibili in "Extra ID3".
+		if strings.HasPrefix(id, "T") {
+			if v := text(); v != "" {
+				*extras = append(*extras, id+"="+v)
+			}
+		} else if strings.HasPrefix(id, "W") {
+			if v := strings.TrimSpace(latin1String(data)); v != "" {
+				*extras = append(*extras, id+"="+v)
+			}
+		}
 	}
 }
 
