@@ -457,6 +457,10 @@ var (
 	pDestroyMenu              = user32.NewProc("DestroyMenu")
 	pGetCursorPos             = user32.NewProc("GetCursorPos")
 	pScreenToClient           = user32.NewProc("ScreenToClient")
+	pEnumWindows              = user32.NewProc("EnumWindows")
+	pGetClassNameW            = user32.NewProc("GetClassNameW")
+	pIsWindowVisible          = user32.NewProc("IsWindowVisible")
+	pAllowSetForegroundWindow = user32.NewProc("AllowSetForegroundWindow")
 	pSetWindowLongPtrW        = user32.NewProc("SetWindowLongPtrW")
 	pCallWindowProcW          = user32.NewProc("CallWindowProcW")
 	pCreateIconFromResourceEx = user32.NewProc("CreateIconFromResourceEx")
@@ -2082,6 +2086,54 @@ func shellOpen(target, verb, params string) error {
 	return nil
 }
 
+func explorerWindows() map[uintptr]bool {
+	out := make(map[uintptr]bool)
+	cb := syscall.NewCallback(func(hwnd uintptr, lParam uintptr) uintptr {
+		visible, _, _ := pIsWindowVisible.Call(hwnd)
+		if visible == 0 {
+			return 1
+		}
+		var buf [128]uint16
+		n, _, _ := pGetClassNameW.Call(hwnd, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
+		if n > 0 && syscall.UTF16ToString(buf[:n]) == "CabinetWClass" {
+			out[hwnd] = true
+		}
+		return 1
+	})
+	pEnumWindows.Call(cb, 0)
+	return out
+}
+
+func openDestinationForeground(path string) error {
+	before := explorerWindows()
+
+	// GoList! è la finestra attiva quando parte il comando: autorizziamo
+	// esplicitamente la shell a portare in primo piano la nuova destinazione.
+	pAllowSetForegroundWindow.Call(0xFFFFFFFF)
+
+	// /n forza una nuova finestra Explorer; /select evidenzia la voce invocata.
+	if err := shellOpen("explorer.exe", "open", "/n,/select,\""+filepath.Clean(path)+"\""); err != nil {
+		return err
+	}
+
+	// Explorer viene creato in modo asincrono. Appena compare la nuova finestra,
+	// la rendiamo attiva invece di lasciarla dietro a GoList!.
+	go func() {
+		deadline := time.Now().Add(2500 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			time.Sleep(50 * time.Millisecond)
+			for hwnd := range explorerWindows() {
+				if !before[hwnd] {
+					pShowWindow.Call(hwnd, SW_SHOW)
+					pSetForegroundWindow.Call(hwnd)
+					return
+				}
+			}
+		}
+	}()
+	return nil
+}
+
 func openWithDialog(path string) error {
 	// Il verbo ShellExecute "openas" non è affidabile sui Windows moderni:
 	// per alcuni tipi restituisce SE_ERR_NOASSOC (31). Usiamo direttamente
@@ -2262,7 +2314,7 @@ func showEntryMenu() {
 	case IDEntryOpen:
 		err = shellOpen(fullPath, "open", "")
 	case IDEntryDestination:
-		err = shellOpen("explorer.exe", "open", "/select,\""+fullPath+"\"")
+		err = openDestinationForeground(fullPath)
 	case IDEntryOpenWith:
 		err = openWithDialog(fullPath)
 	case IDEntryDetails:
