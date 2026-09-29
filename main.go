@@ -3276,6 +3276,7 @@ func htmlExport(path string, selected []int) error {
   var active=audio;
   var rememberedVolume=1;
   var rememberedMuted=false;
+  var rememberedRate=1;
   var videoExt={'.mp4':1,'.m4v':1,'.mkv':1,'.avi':1,'.mov':1,'.wmv':1,'.webm':1,'.mpeg':1,'.mpg':1,'.ts':1,'.m2ts':1,'.3gp':1};
 
   function purgeLegacyPlayers(){
@@ -3337,6 +3338,7 @@ func htmlExport(path string, selected []int) error {
     active=next;
     active.volume=rememberedVolume;
     active.muted=rememberedMuted;
+    active.playbackRate=rememberedRate;
     return active;
   }
   function shuffledCopy(items){
@@ -3346,6 +3348,11 @@ func htmlExport(path string, selected []int) error {
       var t=out[i]; out[i]=out[j]; out[j]=t;
     }
     return out;
+  }
+  function renderNow(item){
+    if(!item){return;}
+    var rateLabel=rememberedRate===1?'':' · '+rememberedRate.toFixed(1)+'×';
+    now.textContent=item.name+' · '+(index+1)+' / '+queue.length+(shuffleMode?' · Shuffle':'')+rateLabel;
   }
   function updateModeButton(){
     modeButton.textContent=shuffleMode?'Mode: Shuffle':'Mode: Sequenza';
@@ -3369,7 +3376,7 @@ func htmlExport(path string, selected []int) error {
     }
     updateModeButton();
     if(current){
-      now.textContent=current.name+' · '+(index+1)+' / '+queue.length+(shuffleMode?' · Shuffle':'');
+      renderNow(current);
     }
   }
   function playAt(pos){
@@ -3383,12 +3390,14 @@ func htmlExport(path string, selected []int) error {
     stopMedia(video);
 
     var el=choosePlayer(item);
-    now.textContent=item.name+' · '+(index+1)+' / '+queue.length;
+    renderNow(item);
     ext.href=item.href;
     el.src=item.href;
     el.volume=rememberedVolume;
     el.muted=rememberedMuted;
+    el.playbackRate=rememberedRate;
     el.load();
+    el.playbackRate=rememberedRate;
     var p=el.play();
     if(p&&p.catch){p.catch(function(){});}
   }
@@ -3468,11 +3477,29 @@ func htmlExport(path string, selected []int) error {
     rememberedMuted=active.muted;
   }
 
+  function changeRate(delta){
+    var r=Math.max(0.1,Math.min(16,Math.round((rememberedRate+delta)*10)/10));
+    rememberedRate=r;
+    audio.playbackRate=r;
+    video.playbackRate=r;
+    renderNow(queue[index]);
+  }
+
+  function normalRate(){
+    rememberedRate=1;
+    audio.playbackRate=1;
+    video.playbackRate=1;
+    renderNow(queue[index]);
+  }
+
   // Tastiera MediaFlow:
   // Space = Play/Pause
   // ← / → = indietro / avanti di 5 secondi
   // Ctrl+← / Ctrl+→ = indietro / avanti di 30 secondi
   // ↑ / ↓ = volume ±5%
+  // Ctrl+↑ / Ctrl+↓ = volume ±20%
+  // C / X = velocità +0.1 / -0.1
+  // Z = velocità normale 1×
   // Tutto in capture, così il browser non mostra soltanto il proprio OSD
   // senza applicare davvero il comando al player.
   document.addEventListener('keydown',function(ev){
@@ -3490,9 +3517,15 @@ func htmlExport(path string, selected []int) error {
     }else if(ev.key==='ArrowRight'){
       seekBy(ev.ctrlKey?30:5);
     }else if(ev.key==='ArrowUp'){
-      if(ev.ctrlKey){handled=false;}else{changeVolume(0.05);}
+      changeVolume(ev.ctrlKey?0.20:0.05);
     }else if(ev.key==='ArrowDown'){
-      if(ev.ctrlKey){handled=false;}else{changeVolume(-0.05);}
+      changeVolume(ev.ctrlKey?-0.20:-0.05);
+    }else if(!ev.ctrlKey&&(ev.key==='c'||ev.key==='C')){
+      changeRate(0.1);
+    }else if(!ev.ctrlKey&&(ev.key==='x'||ev.key==='X')){
+      changeRate(-0.1);
+    }else if(!ev.ctrlKey&&(ev.key==='z'||ev.key==='Z')){
+      normalRate();
     }else{
       handled=false;
     }
