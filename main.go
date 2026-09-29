@@ -3471,26 +3471,28 @@ func htmlExport(path string, selected []int) error {
   // Tastiera MediaFlow:
   // Space = Play/Pause
   // ← / → = indietro / avanti di 5 secondi
+  // Ctrl+← / Ctrl+→ = indietro / avanti di 30 secondi
   // ↑ / ↓ = volume ±5%
   // Tutto in capture, così il browser non mostra soltanto il proprio OSD
   // senza applicare davvero il comando al player.
   document.addEventListener('keydown',function(ev){
     if(!overlay.classList.contains('open')){return;}
-    if(ev.ctrlKey||ev.altKey||ev.metaKey){return;}
+    if(ev.altKey||ev.metaKey){return;}
     var t=ev.target;
     if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)){return;}
 
     var handled=true;
     if(ev.code==='Space'||ev.key===' '||ev.key==='Spacebar'){
-      if(!ev.repeat){togglePlayback();}
+      if(ev.ctrlKey){handled=false;}
+      else if(!ev.repeat){togglePlayback();}
     }else if(ev.key==='ArrowLeft'){
-      seekBy(-5);
+      seekBy(ev.ctrlKey?-30:-5);
     }else if(ev.key==='ArrowRight'){
-      seekBy(5);
+      seekBy(ev.ctrlKey?30:5);
     }else if(ev.key==='ArrowUp'){
-      changeVolume(0.05);
+      if(ev.ctrlKey){handled=false;}else{changeVolume(0.05);}
     }else if(ev.key==='ArrowDown'){
-      changeVolume(-0.05);
+      if(ev.ctrlKey){handled=false;}else{changeVolume(-0.05);}
     }else{
       handled=false;
     }
