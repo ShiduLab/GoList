@@ -2082,6 +2082,14 @@ func shellOpen(target, verb, params string) error {
 	return nil
 }
 
+func openWithDialog(path string) error {
+	// Il verbo ShellExecute "openas" non è affidabile sui Windows moderni:
+	// per alcuni tipi restituisce SE_ERR_NOASSOC (31). Usiamo direttamente
+	// il dialogo "Apri con..." di shell32 tramite rundll32.
+	params := "shell32.dll,OpenAs_RunDLL \"" + filepath.Clean(path) + "\""
+	return shellOpen("rundll32.exe", "open", params)
+}
+
 func showWindowsProperties(path string) error {
 	const SEE_MASK_INVOKEIDLIST = 0x0000000c
 	sei := SHELLEXECUTEINFO{
@@ -2256,7 +2264,7 @@ func showEntryMenu() {
 	case IDEntryDestination:
 		err = shellOpen("explorer.exe", "open", "/select,\""+fullPath+"\"")
 	case IDEntryOpenWith:
-		err = shellOpen(fullPath, "openas", "")
+		err = openWithDialog(fullPath)
 	case IDEntryDetails:
 		msgBox(entryDetailsText(e), "Dettagli · "+e.Name, MB_OK|MB_ICONINFORMATION)
 	case IDEntryProperties:
