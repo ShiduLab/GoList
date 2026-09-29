@@ -460,23 +460,53 @@ Non automatizzare per il gusto di automatizzare: **smettere di pendolare a dondo
 
 ### GO · GO · GO
 
-C'è poi una curiosità che, ventiquattro anni dopo, si è messa a lampeggiare da sola:
+Il gioco dei **GO** non è apparso ventiquattro anni dopo.
 
-**GOList!**  
-fatto allora da **G0gn4**  
-e oggi rimesso in opera in **Go**.
+Era già nato subito, nelle chat con **G0gn4 / Gogna**.
 
-Tre **GO**.
+Nel suo nome c'era già quel **GO** che chiamava il gesto. Io ci aggiunsi soltanto la funzione:
 
-**GO + GO + GO = Go Tree.**
+**List!**
+
+E venne fuori:
+
+# **GoList!**
+
+Il nome portava già dentro tre livelli.
+
+**GO!** ⟡ l'idea che parte, il “vai”.  
+**GOgna** ⟡ il realizzatore che la mette in forma.  
+**List!** ⟡ la funzione che deve compiere.
+
+Idea.  
+Realizzatore.  
+Funzione.
+
+Tre piani dentro un nome corto.
+
+E oggi, guardandolo da qui, ne compare un altro riflesso triplo:
+
+**GoList!**  
+scritto allora da **Gogna**  
+e oggi riscritto in **Go**.
+
+Di nuovo:
+
+**GO + GO + GO**
+
+**Go Tree.**
 
 > **Cartello ⟡ Go Tree**  
 > Tre volte GO.  
 > **Vai di albero.**
 
-Nel 2002 il nome era già **GoList!**. G0gn4 gli diede forma. Nel 2026 il restyling finisce scritto proprio in Go.
+Il bello è che non abbiamo dovuto aggiungerlo dopo per far tornare il gioco. Era già seminato nel nome e nelle persone; il linguaggio Go è arrivato molto più tardi a chiudere un altro giro.
 
-Non serve inventare il gioco: era lì che aspettava di essere visto.
+E poi, visto che GO continua a spuntare:
+
+> **Cartello ⟡ China GO!**  
+> Quando un gioco di parole trova un altro gioco, non gli chiedi il passaporto.  
+> Lo lasci passare. 🙂
 
 **Dalla Notte al Giorno, da un'idea alla sua operatività.**
 
