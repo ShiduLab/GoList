@@ -3211,7 +3211,7 @@ func htmlExport(path string, selected []int) error {
 	}
 	var b strings.Builder
 	b.WriteString("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>GoList! - ShiduLab</title>")
-	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;width:98%}.title-group{display:flex;align-items:baseline;gap:14px;min-width:0}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.folder-title{color:#8cc8ff;font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}.brand{display:flex;align-items:center;gap:9px;color:#8cc8ff;font-size:14px;font-weight:700;white-space:nowrap}.botolo-link{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;transition:transform .16s ease,filter .16s ease}.botolo-link:hover{transform:scale(1.08);filter:brightness(1.22)}.botolo-link:focus-visible{outline:1px solid #ffbf00;outline-offset:3px}.brand img{width:42px;height:42px;object-fit:contain}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}.mf-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9999}.mf-overlay.open{display:flex}.mf-overlay.webfull{background:#000040;align-items:stretch;justify-content:stretch}.mf-box{width:min(760px,92vw);background:#10102d;border:1px solid #409fff;border-radius:12px;padding:18px;box-shadow:0 18px 55px rgba(0,0,0,.55)}.mf-overlay.webfull .mf-box{width:100vw;height:100vh;max-width:none;border:0;border-radius:0;box-sizing:border-box;display:flex;flex-direction:column}.mf-title{color:#ffbf00;font-weight:700;margin-bottom:6px}.mf-now{color:#8cc8ff;font-size:13px;overflow-wrap:anywhere;margin-bottom:4px}.mf-hint{color:#c6ddff;font-size:12px;min-height:16px;margin-bottom:8px}.mf-box audio,.mf-box video{width:100%;max-height:55vh;background:#000}.mf-overlay.webfull video{max-height:none;flex:1;min-height:0}.mf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.mf-actions button,.mf-actions a{border:1px solid #409fff;background:#000040;color:#fff;padding:7px 12px;border-radius:6px;text-decoration:none;cursor:pointer;font:inherit}.mf-actions button:hover,.mf-actions a:hover{border-color:#ffbf00;color:#ffbf00}@media(max-width:700px){.topbar{align-items:flex-start}.title-group{align-items:flex-start;flex-direction:column;gap:4px}.folder-title{font-size:15px;max-width:62vw}.brand{font-size:12px}.brand img{width:34px;height:34px}}</style></head><body>")
+	b.WriteString("<style>html,body{margin:0;padding:0;background:#000040;color:#fff;font-family:Arial,Helvetica,sans-serif}body{padding:18px 20px 26px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;width:98%}.title-group{display:flex;align-items:baseline;gap:14px;min-width:0}.golist{font-family:'Arial Black',Arial,sans-serif;font-size:42px;line-height:1;color:#004080;font-weight:900;margin:4px 0 10px}.folder-title{color:#8cc8ff;font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}.brand{display:flex;align-items:center;gap:9px;color:#8cc8ff;font-size:14px;font-weight:700;white-space:nowrap}.botolo-link{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;transition:transform .16s ease,filter .16s ease}.botolo-link:hover{transform:scale(1.08);filter:brightness(1.22)}.botolo-link:focus-visible{outline:1px solid #ffbf00;outline-offset:3px}.brand img{width:42px;height:42px;object-fit:contain}.rule{height:1px;background:#ffbf00;width:90%;margin:0 0 12px}.summary{text-align:right;color:#409fff;font-size:12px;line-height:1.5;margin:0 1% 20px}.summary .value{color:#ffbf00}.folder{overflow-wrap:anywhere}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:98%;font-size:12px}th{color:#ffbf00;text-align:left;padding:6px 8px;border-bottom:1px solid #ffbf00;white-space:nowrap}td{color:#fff;padding:4px 8px;border-bottom:1px dotted rgba(64,159,255,.20);vertical-align:top;white-space:normal;overflow-wrap:anywhere}tr:nth-child(even) td{background:rgba(255,255,255,.015)}.footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:34px;opacity:.58;color:#bfc8df;font-size:11px}.footer img{width:30px;height:30px;object-fit:contain}.file-link{color:#8cc8ff;text-decoration:none}.file-link:hover{color:#ffbf00;text-decoration:underline}body.mf-docked{padding-bottom:250px}.mf-overlay{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(0,0,64,0),#000040 22%);display:none;align-items:flex-end;justify-content:center;z-index:9999;padding:34px 0 14px}.mf-overlay.open{display:flex}.mf-overlay.webfull{top:0;bottom:0;background:#000040;align-items:stretch;justify-content:stretch;padding:0}.mf-box{width:min(900px,calc(100vw - 40px));background:#10102d;border:1px solid #409fff;border-radius:12px;padding:14px 16px;box-shadow:0 12px 38px rgba(0,0,0,.58);box-sizing:border-box}.mf-overlay.webfull .mf-box{width:100vw;height:100vh;max-width:none;border:0;border-radius:0;box-sizing:border-box;display:flex;flex-direction:column}.mf-title{color:#ffbf00;font-weight:700;margin-bottom:6px}.mf-now{color:#8cc8ff;font-size:13px;overflow-wrap:anywhere;margin-bottom:4px}.mf-hint{color:#c6ddff;font-size:12px;min-height:16px;margin-bottom:8px}.mf-box audio,.mf-box video{width:100%;max-height:55vh;background:#000}.mf-overlay.webfull video{max-height:none;flex:1;min-height:0}.mf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.mf-actions button,.mf-actions a{border:1px solid #409fff;background:#000040;color:#fff;padding:7px 12px;border-radius:6px;text-decoration:none;cursor:pointer;font:inherit}.mf-actions button:hover,.mf-actions a:hover{border-color:#ffbf00;color:#ffbf00}@media(max-width:700px){body.mf-docked{padding-bottom:320px}.topbar{align-items:flex-start}.title-group{align-items:flex-start;flex-direction:column;gap:4px}.folder-title{font-size:15px;max-width:62vw}.brand{font-size:12px}.brand img{width:34px;height:34px}.mf-overlay{padding:28px 0 8px}.mf-box{width:calc(100vw - 16px);padding:12px}.mf-actions{gap:6px}.mf-actions button,.mf-actions a{padding:6px 9px}}</style></head><body>")
 	b.WriteString("<div class=\"topbar\"><div class=\"title-group\"><div class=\"golist\">GoList!</div><div class=\"folder-title\">" + html.EscapeString(folderName) + "</div></div><div class=\"brand\"><a class=\"botolo-link\" href=\"https://github.com/ShiduLab\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"ShiduLab su GitHub\" aria-label=\"Apri la home GitHub di ShiduLab\"><img alt=\"Botolo ShiduLab\" src=\"data:image/png;base64," + logo + "\"></a><span>ShiduLab</span></div></div><div class=\"rule\"></div>")
 	b.WriteString("<div class=\"summary\"><span class=\"value\">" + strconv.Itoa(len(currentEntries)) + "</span> elementi")
 	weight := humanSize(totalListedSize(currentEntries, currentRecursive))
@@ -3240,6 +3240,7 @@ func htmlExport(path string, selected []int) error {
 <div id="mfNow" class="mf-now"></div>
 <div id="mfHint" class="mf-hint"></div>
 <audio id="mfAudio" controls preload="metadata"></audio>
+<audio id="mfAudioB" controls preload="metadata" style="display:none"></audio>
 <video id="mfVideo" controls preload="metadata" playsinline style="display:none"></video>
 <div class="mf-actions">
 <button type="button" id="mfPrev">◀ Precedente</button>
@@ -3267,6 +3268,7 @@ func htmlExport(path string, selected []int) error {
   var overlay=document.getElementById('mfOverlay');
   var now=document.getElementById('mfNow');
   var audio=document.getElementById('mfAudio');
+  var audioB=document.getElementById('mfAudioB');
   var video=document.getElementById('mfVideo');
   var ext=document.getElementById('mfExternal');
   var index=0;
@@ -3278,6 +3280,8 @@ func htmlExport(path string, selected []int) error {
   var rememberedVolume=1;
   var rememberedMuted=false;
   var rememberedRate=1;
+  var crossfading=false;
+  var crossfadeFrame=0;
   var hotkeysEnabled=true;
   var globalHotkeys=true;
   var resumeEnabled=false;
@@ -3350,7 +3354,7 @@ func htmlExport(path string, selected []int) error {
     // Difesa esplicita contro il vecchio MediaFlow: ferma e rimuove
     // qualsiasi motore audio/video estraneo al player corrente.
     Array.prototype.slice.call(document.querySelectorAll('audio,video')).forEach(function(el){
-      if(el===audio||el===video){return;}
+      if(el===audio||el===audioB||el===video){return;}
       try{
         el.pause();
         el.removeAttribute('src');
@@ -3385,11 +3389,12 @@ func htmlExport(path string, selected []int) error {
   function rememberVolume(el){
     // Solo il player attivo può aggiornare il volume globale del MediaFlow.
     // Un elemento nascosto non deve mai riportarlo accidentalmente a 100%.
-    if(el!==active){return;}
+    if(el!==active||crossfading){return;}
     rememberedVolume=el.volume;
     rememberedMuted=el.muted;
   }
   audio.addEventListener('volumechange',function(){rememberVolume(audio);});
+  audioB.addEventListener('volumechange',function(){rememberVolume(audioB);});
   video.addEventListener('volumechange',function(){rememberVolume(video);});
 
   function stopMedia(el){
@@ -3398,10 +3403,30 @@ func htmlExport(path string, selected []int) error {
     el.load();
   }
 
+  function isAudioPlayer(el){
+    return el===audio||el===audioB;
+  }
+  function isVideoItem(item){
+    return !!(item&&videoExt[extension(item.href)]);
+  }
+  function showPlayer(el){
+    audio.style.display=el===audio?'':'none';
+    audioB.style.display=el===audioB?'':'none';
+    video.style.display=el===video?'':'none';
+  }
+  function stopAllMedia(){
+    stopMedia(audio);
+    stopMedia(audioB);
+    stopMedia(video);
+  }
   function choosePlayer(item){
-    var next=videoExt[extension(item.href)]?video:audio;
-    audio.style.display=next===audio?'':'none';
-    video.style.display=next===video?'':'none';
+    var next;
+    if(isVideoItem(item)){
+      next=video;
+    }else{
+      next=isAudioPlayer(active)?active:audio;
+    }
+    showPlayer(next);
     active=next;
     active.volume=rememberedVolume;
     active.muted=rememberedMuted;
@@ -3450,13 +3475,14 @@ func htmlExport(path string, selected []int) error {
   function playAt(pos){
     if(!queue.length){return;}
     if(active&&active.currentSrc){saveProgressFor(queue[index],active);}
+    if(crossfadeFrame){cancelAnimationFrame(crossfadeFrame);crossfadeFrame=0;}
+    crossfading=false;
     index=(pos+queue.length)%queue.length;
     var item=queue[index];
 
-    // Prima di cambiare brano azzera SEMPRE entrambi i motori media.
-    // Così una play() precedente non può rimanere viva dietro alla successiva.
-    stopMedia(audio);
-    stopMedia(video);
+    // Cambio netto per Next/Prev, video e fallback.
+    // L'incrocio tra due brani scelti dalla lista passa invece da crossfadeTo().
+    stopAllMedia();
 
     var el=choosePlayer(item);
     renderNow(item);
@@ -3471,22 +3497,101 @@ func htmlExport(path string, selected []int) error {
     var p=el.play();
     if(p&&p.catch){p.catch(function(){});}
   }
-  function openFlow(clicked){
-    // Prima di ogni nuova sessione assicuriamoci che non esistano
-    // istanze residue del vecchio player.
-    purgeLegacyPlayers();
-    stopMedia(audio);
-    stopMedia(video);
 
-    // La voce cliccata DEVE essere il primo elemento riprodotto.
-    // Non ci affidiamo più all'indice ricavato dalla playlist: usiamo
-    // direttamente l'anchor cliccato e costruiamo la coda attorno a lui.
+  function crossfadeTo(pos){
+    if(!queue.length){return;}
+    var target=(pos+queue.length)%queue.length;
+    var item=queue[target];
+
+    // Video, pausa o assenza di una sorgente viva: cambio normale.
+    if(!isAudioPlayer(active)||active.paused||!active.currentSrc||isVideoItem(item)){
+      playAt(target);
+      return;
+    }
+
+    saveProgressFor(queue[index],active);
+    var outgoing=active;
+    var incoming=outgoing===audio?audioB:audio;
+    var outgoingVolume=outgoing.volume;
+    var targetVolume=rememberedVolume;
+    var targetMuted=rememberedMuted;
+
+    if(crossfadeFrame){cancelAnimationFrame(crossfadeFrame);crossfadeFrame=0;}
+    crossfading=true;
+    stopMedia(incoming);
+
+    index=target;
+    renderNow(item);
+    ext.href=item.href;
+
+    showPlayer(incoming);
+    active=incoming;
+    incoming.src=item.href;
+    incoming.volume=0;
+    incoming.muted=targetMuted;
+    incoming.playbackRate=rememberedRate;
+    incoming.addEventListener('loadedmetadata',function(){restoreProgressFor(item,incoming);},{once:true});
+    incoming.load();
+    incoming.playbackRate=rememberedRate;
+
+    function beginFade(){
+      var duration=700;
+      var started=performance.now();
+      function step(t){
+        var p=Math.min(1,(t-started)/duration);
+        outgoing.volume=Math.max(0,outgoingVolume*(1-p));
+        incoming.volume=Math.max(0,Math.min(1,targetVolume*p));
+        if(p<1){
+          crossfadeFrame=requestAnimationFrame(step);
+          return;
+        }
+        stopMedia(outgoing);
+        crossfadeFrame=0;
+        crossfading=false;
+        incoming.volume=targetVolume;
+        incoming.muted=targetMuted;
+        rememberedVolume=targetVolume;
+        rememberedMuted=targetMuted;
+        flashHint('Mix → '+item.name);
+      }
+      crossfadeFrame=requestAnimationFrame(step);
+    }
+
+    var p=incoming.play();
+    if(p&&p.then){
+      p.then(beginFade).catch(function(){
+        crossfading=false;
+        playAt(target);
+      });
+    }else{
+      beginFade();
+    }
+  }
+
+  function openFlow(clicked){
+    purgeLegacyPlayers();
+
     var clickedItem={
       href:clicked.href,
       name:clicked.getAttribute('data-name')||clicked.textContent||clicked.href
     };
-    var others=media.filter(function(x){return x.href!==clickedItem.href;});
 
+    overlay.classList.add('open');
+    document.body.classList.add('mf-docked');
+
+    // Se MediaFlow è già vivo, il click sulla lista non ricrea la sessione:
+    // porta il brano scelto in riproduzione e lascia intatta la coda corrente.
+    if(queue.length){
+      var existing=queue.findIndex(function(x){return x.href===clickedItem.href;});
+      if(existing>=0){
+        crossfadeTo(existing);
+        return;
+      }
+    }
+
+    // Prima sessione: la voce cliccata parte per prima e costruisce la coda.
+    stopAllMedia();
+    var others=media.filter(function(x){return x.href!==clickedItem.href;});
     if(media.length>1&&window.confirm('GoList! MediaFlow\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
       baseQueue=[clickedItem].concat(others);
     }else{
@@ -3495,7 +3600,6 @@ func htmlExport(path string, selected []int) error {
     queue=baseQueue.slice();
     shuffleMode=false;
     updateModeButton();
-    overlay.classList.add('open');
     playAt(0);
   }
   links.forEach(function(a){
@@ -3511,8 +3615,12 @@ func htmlExport(path string, selected []int) error {
   });
   function next(){if(queue.length){playAt(index+1);}}
   function prev(){if(queue.length){playAt(index-1);}}
-  audio.addEventListener('ended',next);
-  video.addEventListener('ended',next);
+  function endedNext(ev){
+    if(ev.currentTarget===active&&!crossfading){next();}
+  }
+  audio.addEventListener('ended',endedNext);
+  audioB.addEventListener('ended',endedNext);
+  video.addEventListener('ended',endedNext);
   document.getElementById('mfNext').addEventListener('click',next);
   document.getElementById('mfPrev').addEventListener('click',prev);
   modeButton.addEventListener('click',function(){
@@ -3553,6 +3661,7 @@ func htmlExport(path string, selected []int) error {
     var r=Math.max(0.1,Math.min(16,Math.round((rememberedRate+delta)*10)/10));
     rememberedRate=r;
     audio.playbackRate=r;
+    audioB.playbackRate=r;
     video.playbackRate=r;
     renderNow(queue[index]);
     flashHint('Velocità '+r.toFixed(1)+'×');
@@ -3561,6 +3670,7 @@ func htmlExport(path string, selected []int) error {
   function normalRate(){
     rememberedRate=1;
     audio.playbackRate=1;
+    audioB.playbackRate=1;
     video.playbackRate=1;
     renderNow(queue[index]);
     flashHint('Velocità 1×');
@@ -3673,12 +3783,13 @@ func htmlExport(path string, selected []int) error {
     flashHint('HotKeys pagina '+(globalHotkeys?'ON':'OFF'));
   }
 
-  function mediaTimeUpdate(){
-    if(!resumeEnabled||Date.now()-lastProgressSave<2500){return;}
+  function mediaTimeUpdate(ev){
+    if(ev.currentTarget!==active||!resumeEnabled||Date.now()-lastProgressSave<2500){return;}
     lastProgressSave=Date.now();
     saveProgressFor(queue[index],active);
   }
   audio.addEventListener('timeupdate',mediaTimeUpdate);
+  audioB.addEventListener('timeupdate',mediaTimeUpdate);
   video.addEventListener('timeupdate',mediaTimeUpdate);
 
   // HotKeys MediaFlow, derivate dalla mappa d'uso h5player:
@@ -3793,19 +3904,14 @@ func htmlExport(path string, selected []int) error {
   },true);
   document.getElementById('mfClose').addEventListener('click',function(){
     saveProgressFor(queue[index],active);
+    if(crossfadeFrame){cancelAnimationFrame(crossfadeFrame);crossfadeFrame=0;}
+    crossfading=false;
     audio.pause();
+    audioB.pause();
     video.pause();
     overlay.classList.remove('open');
     overlay.classList.remove('webfull');
-  });
-  overlay.addEventListener('click',function(ev){
-    if(ev.target===overlay){
-      saveProgressFor(queue[index],active);
-      audio.pause();
-      video.pause();
-      overlay.classList.remove('open');
-      overlay.classList.remove('webfull');
-    }
+    document.body.classList.remove('mf-docked');
   });
 })();
 </script>`)
