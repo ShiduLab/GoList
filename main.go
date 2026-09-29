@@ -3360,12 +3360,19 @@ func htmlExport(path string, selected []int) error {
     if(p&&p.catch){p.catch(function(){});}
   }
   function openFlow(clicked){
-    var at=media.findIndex(function(x){return x.href===clicked.href;});
-    if(at<0){at=0;}
+    // La voce cliccata DEVE essere il primo elemento riprodotto.
+    // Non ci affidiamo più all'indice ricavato dalla playlist: usiamo
+    // direttamente l'anchor cliccato e costruiamo la coda attorno a lui.
+    var clickedItem={
+      href:clicked.href,
+      name:clicked.getAttribute('data-name')||clicked.textContent||clicked.href
+    };
+    var others=media.filter(function(x){return x.href!==clickedItem.href;});
+
     if(media.length>1&&window.confirm('GoList! MediaFlow\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
-      baseQueue=media.slice(at).concat(media.slice(0,at));
+      baseQueue=[clickedItem].concat(others);
     }else{
-      baseQueue=[media[at]];
+      baseQueue=[clickedItem];
     }
     queue=baseQueue.slice();
     shuffleMode=false;
