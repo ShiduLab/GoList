@@ -122,7 +122,11 @@ const (
 	LVCF_SUBITEM    = 0x0008
 	LVCFMT_LEFT     = 0x0000
 	LVCFMT_RIGHT    = 0x0001
-	LVN_COLUMNCLICK = -108
+	LVN_COLUMNCLICK     = -108
+	HDN_DIVIDERDBLCLICKA = -305
+	HDN_BEGINTRACKA      = -306
+	HDN_DIVIDERDBLCLICKW = -325
+	HDN_BEGINTRACKW      = -326
 
 	ICC_LISTVIEW_CLASSES = 0x00000001
 )
@@ -260,6 +264,13 @@ type NMHDR struct {
 	HwndFrom uintptr
 	IdFrom   uintptr
 	Code     uint32
+}
+
+type NMHEADER struct {
+	Hdr     NMHDR
+	IItem   int32
+	IButton int32
+	PItem   uintptr
 }
 
 type NMLISTVIEW struct {
@@ -448,6 +459,7 @@ var (
 	currentSortAscending                                                                      = true
 	columnVisible                                                                             []bool
 	columnSavedWidths                                                                         []int32
+	columnOrder                                                                               []int32
 	hIconBig, hIconSmall                                                                      uintptr
 	hDarkBrush                                                                                 uintptr
 	hUIFont                                                                                    uintptr
@@ -1894,6 +1906,7 @@ func toggleColumn(i int) {
 	if i < 0 || i >= len(columns) {
 		return
 	}
+	captureVisibleColumnOrder()
 	if len(columnVisible) != len(columns) {
 		columnVisible = make([]bool, len(columns))
 		for j := range columnVisible {
@@ -1930,6 +1943,7 @@ func toggleColumn(i int) {
 		}
 		pSendMessageW.Call(hwndTable, LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(w))
 	}
+	applyColumnOrderForVisibility()
 	saveTableLayout()
 	if currentFolder != "" && len(currentEntries) > 0 {
 		currentText = renderText(currentFolder, currentEntries)
@@ -1939,9 +1953,11 @@ func toggleColumn(i int) {
 func setupTable() {
 	columnVisible = make([]bool, len(columns))
 	columnSavedWidths = make([]int32, len(columns))
+	columnOrder = make([]int32, len(columns))
 	for i, c := range columns {
 		columnVisible[i] = c.DefaultVisible
 		columnSavedWidths[i] = c.Width
+		columnOrder[i] = int32(i)
 		txt := wptr(c.Title)
 		col := LVCOLUMN{Mask: LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM, Fmt: c.Align, Cx: c.Width, PszText: txt, ISubItem: int32(i)}
 		pSendMessageW.Call(hwndTable, LVM_INSERTCOLUMNW, uintptr(i), uintptr(unsafe.Pointer(&col)))
@@ -1949,6 +1965,7 @@ func setupTable() {
 	ex := uintptr(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_DOUBLEBUFFER)
 	pSendMessageW.Call(hwndTable, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, ex)
 	loadTableLayout()
+	applyColumnOrderForVisibility()
 	for i := range columns {
 		w := columnSavedWidths[i]
 		if !columnVisible[i] {
@@ -2069,6 +2086,79 @@ func sortCurrent(col int) {
 	refreshTable()
 }
 
+func ensureColumnOrder() {
+	if len(columnOrder) == len(columns) {
+		return
+	}
+	columnOrder = make([]int32, len(columns))
+	for i := range columns {
+		columnOrder[i] = int32(i)
+	}
+}
+
+func captureVisibleColumnOrder() {
+	if hwndTable == 0 || len(columnVisible) != len(columns) {
+		return
+	}
+	ensureColumnOrder()
+	actual := make([]int32, len(columns))
+	if len(actual) == 0 {
+		return
+	}
+	pSendMessageW.Call(hwndTable, LVM_GETCOLUMNORDERARRAY, uintptr(len(actual)), uintptr(unsafe.Pointer(&actual[0])))
+
+	visibleNow := make([]int32, 0, len(columns))
+	seen := make([]bool, len(columns))
+	for _, x := range actual {
+		i := int(x)
+		if i >= 0 && i < len(columns) && !seen[i] && columnVisible[i] {
+			visibleNow = append(visibleNow, x)
+			seen[i] = true
+		}
+	}
+	if len(visibleNow) == 0 {
+		return
+	}
+
+	// Keep hidden columns in their semantic slots while preserving any
+	// user drag-reordering among the columns that are actually visible.
+	next := append([]int32(nil), columnOrder...)
+	j := 0
+	for pos, x := range columnOrder {
+		i := int(x)
+		if i >= 0 && i < len(columns) && columnVisible[i] && j < len(visibleNow) {
+			next[pos] = visibleNow[j]
+			j++
+		}
+	}
+	if j == len(visibleNow) {
+		columnOrder = next
+	}
+}
+
+func applyColumnOrderForVisibility() {
+	if hwndTable == 0 || len(columnVisible) != len(columns) {
+		return
+	}
+	ensureColumnOrder()
+	actual := make([]int32, 0, len(columns))
+	for _, x := range columnOrder {
+		i := int(x)
+		if i >= 0 && i < len(columns) && columnVisible[i] {
+			actual = append(actual, x)
+		}
+	}
+	for _, x := range columnOrder {
+		i := int(x)
+		if i >= 0 && i < len(columns) && !columnVisible[i] {
+			actual = append(actual, x)
+		}
+	}
+	if len(actual) == len(columns) && len(actual) > 0 {
+		pSendMessageW.Call(hwndTable, LVM_SETCOLUMNORDERARRAY, uintptr(len(actual)), uintptr(unsafe.Pointer(&actual[0])))
+	}
+}
+
 func layoutPath() string {
 	exe, err := os.Executable()
 	if err != nil {
@@ -2082,6 +2172,7 @@ func saveTableLayout() {
 	if hwndTable == 0 {
 		return
 	}
+	captureVisibleColumnOrder()
 	if len(columnSavedWidths) != len(columns) {
 		columnSavedWidths = make([]int32, len(columns))
 		for i, c := range columns {
@@ -2097,10 +2188,8 @@ func saveTableLayout() {
 			}
 		}
 	}
-	order := make([]int32, len(columns))
-	if len(order) > 0 {
-		pSendMessageW.Call(hwndTable, LVM_GETCOLUMNORDERARRAY, uintptr(len(order)), uintptr(unsafe.Pointer(&order[0])))
-	}
+	ensureColumnOrder()
+	order := append([]int32(nil), columnOrder...)
 	visible := append([]bool(nil), columnVisible...)
 	widths := append([]int32(nil), columnSavedWidths...)
 	data, err := json.MarshalIndent(TableLayout{Widths: widths, Order: order, Visible: visible}, "", "  ")
@@ -2154,7 +2243,7 @@ func loadTableLayout() {
 			seen[x] = true
 		}
 		if valid {
-			pSendMessageW.Call(hwndTable, LVM_SETCOLUMNORDERARRAY, uintptr(len(l.Order)), uintptr(unsafe.Pointer(&l.Order[0])))
+			columnOrder = append([]int32(nil), l.Order...)
 		}
 	}
 }
@@ -3151,6 +3240,16 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	case WM_NOTIFY:
 		if lParam != 0 {
 			hdr := (*NMHDR)(unsafe.Pointer(lParam))
+			if hdr.HwndFrom == hwndHeader {
+				code := int32(hdr.Code)
+				if code == HDN_BEGINTRACKA || code == HDN_BEGINTRACKW || code == HDN_DIVIDERDBLCLICKA || code == HDN_DIVIDERDBLCLICKW {
+					nmh := (*NMHEADER)(unsafe.Pointer(lParam))
+					i := int(nmh.IItem)
+					if i >= 0 && i < len(columnVisible) && !columnVisible[i] {
+						return 1
+					}
+				}
+			}
 			if hdr.HwndFrom == hwndTable && int32(hdr.Code) == LVN_COLUMNCLICK {
 				nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
 				sortCurrent(int(nmlv.ISubItem))
