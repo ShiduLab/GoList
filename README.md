@@ -385,7 +385,9 @@ GoList! sta da quella parte del banco dove **Arti e Mestieri** smettono di esser
 
 C'è l'idea, c'è l'uso, c'è il codice, c'è la musica, c'è l'archivio, c'è il gesto ripetuto abbastanza volte da diventare mestiere e quello inatteso che apre un'altra strada.
 
-**OraTorio. OraTorno.**
+**OraTorio... OraTorno...**
+
+I puntini sono sospensione: non una fermata, ma quell'attimo in cui il pendolo attraversa il centro e puoi **guardare** prima che il moto prosegua.
 
 Il pendolo continua.
 
