@@ -1,3 +1,5 @@
+<img width="1280" height="617" alt="2" src="https://github.com/user-attachments/assets/f0f3e95b-7981-4be4-a3cb-de136ec77567" />
+<img width="1280" height="694" alt="1" src="https://github.com/user-attachments/assets/0ee08e68-2481-4e9a-be3c-5d7f340b594b" />
 # GoList!
 
 **Portable Windows file lister, exporter e MediaFlow**  
