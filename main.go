@@ -3240,6 +3240,7 @@ func htmlExport(path string, selected []int) error {
 <button type="button" id="mfPrev">◀ Precedente</button>
 <button type="button" id="mfToggle">Pausa / Play</button>
 <button type="button" id="mfNext">Successiva ▶</button>
+<button type="button" id="mfMode" aria-pressed="false">Mode: Sequenza</button>
 <a id="mfExternal" href="#">Apri esterno</a>
 <button type="button" id="mfClose">Chiudi</button>
 </div>
@@ -3265,6 +3266,9 @@ func htmlExport(path string, selected []int) error {
   var ext=document.getElementById('mfExternal');
   var index=0;
   var queue=[];
+  var baseQueue=[];
+  var shuffleMode=false;
+  var modeButton=document.getElementById('mfMode');
   var active=audio;
   var rememberedVolume=1;
   var rememberedMuted=false;
@@ -3298,6 +3302,39 @@ func htmlExport(path string, selected []int) error {
     active.muted=rememberedMuted;
     return active;
   }
+  function shuffledCopy(items){
+    var out=items.slice();
+    for(var i=out.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var t=out[i]; out[i]=out[j]; out[j]=t;
+    }
+    return out;
+  }
+  function updateModeButton(){
+    modeButton.textContent=shuffleMode?'Mode: Shuffle':'Mode: Sequenza';
+    modeButton.setAttribute('aria-pressed',shuffleMode?'true':'false');
+    modeButton.disabled=baseQueue.length<2;
+    modeButton.title=baseQueue.length<2?'Serve più di un elemento per lo shuffle':'Cambia ordine di riproduzione';
+  }
+  function setShuffleMode(enabled){
+    if(baseQueue.length<2){return;}
+    var current=queue[index];
+    shuffleMode=enabled;
+    if(shuffleMode){
+      var rest=baseQueue.filter(function(x){return !current||x.href!==current.href;});
+      queue=[current].concat(shuffledCopy(rest));
+      index=0;
+    }else{
+      var at=baseQueue.findIndex(function(x){return current&&x.href===current.href;});
+      if(at<0){at=0;}
+      queue=baseQueue.slice(at).concat(baseQueue.slice(0,at));
+      index=0;
+    }
+    updateModeButton();
+    if(current){
+      now.textContent=(index+1)+' / '+queue.length+' · '+current.name+(shuffleMode?' · Shuffle':'');
+    }
+  }
   function playAt(pos){
     if(!queue.length){return;}
     index=(pos+queue.length)%queue.length;
@@ -3316,10 +3353,13 @@ func htmlExport(path string, selected []int) error {
     var at=media.findIndex(function(x){return x.href===clicked.href;});
     if(at<0){at=0;}
     if(media.length>1&&window.confirm('GoList! MediaFlow\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
-      queue=media.slice(at).concat(media.slice(0,at));
+      baseQueue=media.slice(at).concat(media.slice(0,at));
     }else{
-      queue=[media[at]];
+      baseQueue=[media[at]];
     }
+    queue=baseQueue.slice();
+    shuffleMode=false;
+    updateModeButton();
     overlay.classList.add('open');
     playAt(0);
   }
@@ -3335,6 +3375,9 @@ func htmlExport(path string, selected []int) error {
   video.addEventListener('ended',next);
   document.getElementById('mfNext').addEventListener('click',next);
   document.getElementById('mfPrev').addEventListener('click',prev);
+  modeButton.addEventListener('click',function(){
+    setShuffleMode(!shuffleMode);
+  });
   document.getElementById('mfToggle').addEventListener('click',function(){
     if(active.paused){
       var p=active.play();
