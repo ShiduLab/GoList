@@ -173,6 +173,7 @@ const (
 	IDEntryOpenWith    = 3502
 	IDEntryDetails     = 3503
 	IDEntryProperties  = 3504
+	IDEntryGoPlayList  = 3505
 	IDEntryCopyFile    = 3510
 	IDEntryCopyName    = 3511
 	IDEntryCopyPath    = 3512
@@ -2265,6 +2266,88 @@ func entryDetailsText(e Entry) string {
 	return b.String()
 }
 
+func isMediaEntry(e Entry) bool {
+	if strings.EqualFold(e.Kind, "DIR") {
+		return false
+	}
+	ext := strings.ToLower(filepath.Ext(e.Name))
+	switch ext {
+	case ".mp3", ".flac", ".wav", ".wave", ".ogg", ".oga", ".opus",
+		".m4a", ".aac", ".wma", ".aiff", ".aif", ".alac",
+		".mp4", ".m4v", ".mkv", ".avi", ".mov", ".wmv", ".webm",
+		".mpeg", ".mpg", ".ts", ".m2ts", ".3gp", ".mid", ".midi":
+		return true
+	}
+	return false
+}
+
+func goPlaylistLabel(e Entry) string {
+	label := strings.TrimSpace(e.Title)
+	if label == "" {
+		label = strings.TrimSpace(strings.TrimSuffix(e.Name, filepath.Ext(e.Name)))
+	}
+	if artist := strings.TrimSpace(e.Artist); artist != "" {
+		label = artist + " - " + label
+	}
+	label = strings.NewReplacer("\r", " ", "\n", " ").Replace(label)
+	return label
+}
+
+func createAndOpenGoPlaylist(startIdx int) error {
+	if currentFolder == "" || len(currentEntries) == 0 {
+		return fmt.Errorf("nessuna lista disponibile")
+	}
+
+	mediaIdx := make([]int, 0, len(currentEntries))
+	for i, e := range currentEntries {
+		if isMediaEntry(e) {
+			mediaIdx = append(mediaIdx, i)
+		}
+	}
+	if len(mediaIdx) == 0 {
+		return fmt.Errorf("GoPlayList!: nessun file multimediale nella lista")
+	}
+
+	// Se il menu è stato aperto su un media, quello diventa il primo elemento;
+	// il resto continua nell'ordine corrente di GoList! e poi riparte dall'inizio.
+	startPos := 0
+	for pos, idx := range mediaIdx {
+		if idx == startIdx {
+			startPos = pos
+			break
+		}
+	}
+	ordered := append([]int(nil), mediaIdx[startPos:]...)
+	ordered = append(ordered, mediaIdx[:startPos]...)
+
+	var b strings.Builder
+	b.WriteString("#EXTM3U\r\n")
+	for _, idx := range ordered {
+		e := currentEntries[idx]
+		if e.DurationSeconds > 0 {
+			b.WriteString(fmt.Sprintf("#EXTINF:%d,%s\r\n", e.DurationSeconds, goPlaylistLabel(e)))
+		}
+		b.WriteString(fullEntryPath(currentFolder, e))
+		b.WriteString("\r\n")
+	}
+
+	dir := filepath.Join(os.TempDir(), "ShiduLab", "GoList")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	playlist := filepath.Join(dir, "GoPlayList.m3u8")
+	if err := os.WriteFile(playlist, []byte(b.String()), 0644); err != nil {
+		return err
+	}
+
+	if err := shellOpen(playlist, "open", ""); err != nil {
+		// Prima esecuzione o nessuna associazione: lascia scegliere il player.
+		return openWithDialog(playlist)
+	}
+	setText(hwndStatus, fmt.Sprintf("GoPlayList! · %d media · %s", len(ordered), currentFolder))
+	return nil
+}
+
 func webSearchForEntry(e Entry) error {
 	q := strings.TrimSpace(strings.TrimSpace(e.Artist + " " + e.Title))
 	if q == "" {
@@ -2310,6 +2393,7 @@ func showEntryMenu() {
 	pAppendMenuW.Call(menu, MF_STRING, IDEntryOpen, uintptr(unsafe.Pointer(wptr("Apri file"))))
 	pAppendMenuW.Call(menu, MF_STRING, IDEntryDestination, uintptr(unsafe.Pointer(wptr("Apri destinazione"))))
 	pAppendMenuW.Call(menu, MF_STRING, IDEntryOpenWith, uintptr(unsafe.Pointer(wptr("Apri con..."))))
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryGoPlayList, uintptr(unsafe.Pointer(wptr("GoPlayList!"))))
 	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
 	pAppendMenuW.Call(menu, MF_STRING, IDEntryDetails, uintptr(unsafe.Pointer(wptr("Dettagli"))))
 	pAppendMenuW.Call(menu, MF_STRING, IDEntryProperties, uintptr(unsafe.Pointer(wptr("Proprietà Windows"))))
@@ -2337,6 +2421,8 @@ func showEntryMenu() {
 		err = openDestinationForeground(fullPath)
 	case IDEntryOpenWith:
 		err = openWithDialog(fullPath)
+	case IDEntryGoPlayList:
+		err = createAndOpenGoPlaylist(idx)
 	case IDEntryDetails:
 		msgBox(entryDetailsText(e), "Dettagli · "+e.Name, MB_OK|MB_ICONINFORMATION)
 	case IDEntryProperties:
