@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "main.go"
+      - "go.mod"
       - "assets/**"
       - ".github/workflows/build-windows.yml"
 
@@ -25,6 +26,10 @@ jobs:
         with:
           go-version: "1.23.x"
 
+      - name: Embed Botolo icon in executable
+        run: |
+          go run github.com/akavel/rsrc@latest -arch amd64 -ico assets/Botolo.ico -o rsrc_windows_amd64.syso
+
       - name: Build Windows x64
         env:
           GOOS: windows
@@ -32,7 +37,7 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags="-H windowsgui" -o "dist/GoList!.exe" main.go
+          go build -trimpath -ldflags="-H windowsgui" -o "dist/GoList!.exe" .
 
       - name: Upload executable
         uses: actions/upload-artifact@v4

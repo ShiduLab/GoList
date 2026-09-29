@@ -451,6 +451,7 @@ var (
 	hIconBig, hIconSmall                                                                      uintptr
 	hDarkBrush                                                                                 uintptr
 	hUIFont                                                                                    uintptr
+	hResultFont                                                                                uintptr
 	uiZoom                                                                                     = 100
 	htmlDlgClassRegistered                                                                    bool
 	htmlDlgHwnd                                                                               uintptr
@@ -471,7 +472,9 @@ func utf16z(s string) []uint16 { return append(syscall.StringToUTF16(s), 0) }
 func loword(v uintptr) uint16  { return uint16(v & 0xffff) }
 
 func scaleUI(v int32) int32 {
-	return v * int32(uiZoom) / 100
+	// The application chrome stays tied to the user's window/resolution.
+	// Zoom is intentionally restricted to the results pane.
+	return v
 }
 
 func ensureUIFont() uintptr {
@@ -496,19 +499,38 @@ func applyUIFont(hwnd uintptr) {
 	}
 }
 
-func applyZoomToMainControls() {
-	if hwndMain == 0 {
+func ensureResultFont() uintptr {
+	if hResultFont != 0 {
+		return hResultFont
+	}
+	height := -(12 * int32(uiZoom) / 100)
+	hResultFont, _, _ = pCreateFontW.Call(
+		uintptr(int64(height)), 0, 0, 0, 400,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		uintptr(unsafe.Pointer(wptr("Segoe UI"))),
+	)
+	if hResultFont == 0 {
+		hResultFont, _, _ = pGetStockObject.Call(DEFAULT_GUI_FONT)
+	}
+	return hResultFont
+}
+
+func applyResultFont(hwnd uintptr) {
+	if hwnd != 0 {
+		pSendMessageW.Call(hwnd, WM_SETFONT, ensureResultFont(), 1)
+	}
+}
+
+func applyZoomToResults() {
+	if hwndTable == 0 {
 		return
 	}
-	getDlg := user32.NewProc("GetDlgItem")
-	for _, id := range []int{IDPath, IDBrowse, IDList, IDRecursive, IDCopy, IDDeleteList, IDSave, IDAddContext, IDRemoveContext, IDStatus, IDBrand, IDHint} {
-		h, _, _ := getDlg.Call(hwndMain, uintptr(id))
-		applyUIFont(h)
+	applyResultFont(hwndTable)
+	applyResultFont(hwndHeader)
+	pInvalidateRect.Call(hwndTable, 0, 1)
+	if hwndHeader != 0 {
+		pInvalidateRect.Call(hwndHeader, 0, 1)
 	}
-	applyUIFont(hwndTable)
-	applyUIFont(hwndHeader)
-	onSize()
-	pInvalidateRect.Call(hwndMain, 0, 1)
 }
 
 func setUIZoom(z int) {
@@ -522,12 +544,12 @@ func setUIZoom(z int) {
 		return
 	}
 	uiZoom = z
-	if hUIFont != 0 {
-		pDeleteObject.Call(hUIFont)
-		hUIFont = 0
+	if hResultFont != 0 {
+		pDeleteObject.Call(hResultFont)
+		hResultFont = 0
 	}
-	applyZoomToMainControls()
-	setText(hwndStatus, fmt.Sprintf("Zoom %d%%", uiZoom))
+	applyZoomToResults()
+	setText(hwndStatus, fmt.Sprintf("Zoom risultati %d%%", uiZoom))
 }
 
 func createControl(class, text string, style uint32, x, y, w, h int32, parent uintptr, id int) uintptr {
@@ -1943,6 +1965,8 @@ func setupTable() {
 		idx := int32(GWLP_WNDPROC)
 		oldHeaderWndProc, _, _ = pSetWindowLongPtrW.Call(hwndHeader, uintptr(idx), headerWndProcCallback)
 	}
+	applyResultFont(hwndTable)
+	applyResultFont(hwndHeader)
 }
 
 func refreshTable() {
@@ -3250,6 +3274,10 @@ func main() {
 	if hUIFont != 0 {
 		pDeleteObject.Call(hUIFont)
 		hUIFont = 0
+	}
+	if hResultFont != 0 {
+		pDeleteObject.Call(hResultFont)
+		hResultFont = 0
 	}
 	if hIconSmall != 0 {
 		pDestroyIcon.Call(hIconSmall)
