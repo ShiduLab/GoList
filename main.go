@@ -42,6 +42,7 @@ const (
 	BS_AUTOCHECKBOX      = 0x00000003
 	CW_USEDEFAULT        = ^uintptr(0x7fffffff)
 	SW_HIDE              = 0
+	SW_SHOWNORMAL        = 1
 	SW_SHOW              = 5
 	SS_CENTER            = 0x00000001
 	SS_RIGHT             = 0x00000002
@@ -159,6 +160,8 @@ const (
 	IDZoomIn         = 3300
 	IDZoomOut        = 3301
 	IDZoomReset      = 3302
+	IDExportOpen     = 3400
+	IDExportClose    = 3401
 )
 
 type WNDCLASSEX struct {
@@ -428,6 +431,7 @@ var (
 	pDragAcceptFiles                         = shell32.NewProc("DragAcceptFiles")
 	pDragQueryFileW                          = shell32.NewProc("DragQueryFileW")
 	pDragFinish                              = shell32.NewProc("DragFinish")
+	pShellExecuteW                           = shell32.NewProc("ShellExecuteW")
 	pSHBrowseForFolderW                      = shell32.NewProc("SHBrowseForFolderW")
 	pSHGetPathFromIDListW                    = shell32.NewProc("SHGetPathFromIDListW")
 	pSetCurrentProcessExplicitAppUserModelID = shell32.NewProc("SetCurrentProcessExplicitAppUserModelID")
@@ -471,6 +475,9 @@ var (
 	htmlDlgAccepted                                                                           bool
 	htmlDlgSelection                                                                          []bool
 	exportDlgFormatLabel                                                                      = "HTML"
+	exportSuccessClassRegistered                                                              bool
+	exportSuccessDone                                                                         bool
+	exportSuccessPath                                                                         string
 	startupExportFormat                                                                       string
 	startupExportPreset                                                                       string
 )
@@ -679,6 +686,108 @@ func htmlExportCell(e Entry, col int) string {
 func msgBox(text, title string, flags uintptr) int {
 	r, _, _ := pMessageBoxW.Call(hwndMain, uintptr(unsafe.Pointer(wptr(text))), uintptr(unsafe.Pointer(wptr(title))), flags)
 	return int(r)
+}
+
+func exportSuccessWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case WM_CTLCOLORSTATIC, WM_CTLCOLOREDIT, WM_CTLCOLORBTN:
+		pSetTextColor.Call(wParam, rgb(232, 232, 232))
+		pSetBkColor.Call(wParam, rgb(30, 30, 30))
+		pSetBkMode.Call(wParam, TRANSPARENT)
+		return ensureDarkBrush()
+	case WM_CREATE:
+		createControl("STATIC", "Lista esportata in HTML.", WS_CHILD|WS_VISIBLE, 24, 24, 360, 24, hwnd, 0)
+		createControl("BUTTON", "Apri HTML", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 92, 72, 112, 30, hwnd, IDExportOpen)
+		createControl("BUTTON", "OK", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 216, 72, 92, 30, hwnd, IDExportClose)
+		return 0
+	case WM_COMMAND:
+		switch int(loword(wParam)) {
+		case IDExportOpen:
+			if exportSuccessPath != "" {
+				r, _, _ := pShellExecuteW.Call(
+					hwnd,
+					uintptr(unsafe.Pointer(wptr("open"))),
+					uintptr(unsafe.Pointer(wptr(exportSuccessPath))),
+					0, 0, SW_SHOWNORMAL,
+				)
+				if r <= 32 {
+					pMessageBoxW.Call(hwnd, uintptr(unsafe.Pointer(wptr("Non riesco ad aprire il file HTML."))), uintptr(unsafe.Pointer(wptr(appTitle))), MB_OK|MB_ICONERROR)
+					return 0
+				}
+			}
+			pDestroyWindow.Call(hwnd)
+			return 0
+		case IDExportClose:
+			pDestroyWindow.Call(hwnd)
+			return 0
+		}
+	case WM_CLOSE:
+		pDestroyWindow.Call(hwnd)
+		return 0
+	case WM_DESTROY:
+		exportSuccessDone = true
+		return 0
+	}
+	r, _, _ := pDefWindowProcW.Call(hwnd, uintptr(msg), wParam, lParam)
+	return r
+}
+
+func showHTMLExportSuccess(path string) {
+	if path == "" {
+		return
+	}
+	if !exportSuccessClassRegistered {
+		hInst, _, _ := pGetModuleHandleW.Call(0)
+		className := wptr("GoListExportSuccessClass")
+		cursor, _, _ := pLoadCursorW.Call(0, IDC_ARROW)
+		wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(exportSuccessWndProc), HInstance: hInst, HIcon: hIconBig, HCursor: cursor, HbrBackground: ensureDarkBrush(), LpszClassName: className, HIconSm: hIconSmall}
+		if r, _, _ := pRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
+			msgBox("Lista esportata in HTML.", appTitle, MB_OK|MB_ICONINFORMATION)
+			return
+		}
+		exportSuccessClassRegistered = true
+	}
+	exportSuccessPath = path
+	exportSuccessDone = false
+
+	hInst, _, _ := pGetModuleHandleW.Call(0)
+	className := wptr("GoListExportSuccessClass")
+	hwnd, _, _ := pCreateWindowExW.Call(
+		1,
+		uintptr(unsafe.Pointer(className)),
+		uintptr(unsafe.Pointer(wptr(appTitle))),
+		WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_VISIBLE,
+		CW_USEDEFAULT, CW_USEDEFAULT, 420, 150,
+		hwndMain, 0, hInst, 0,
+	)
+	if hwnd == 0 {
+		msgBox("Lista esportata in HTML.", appTitle, MB_OK|MB_ICONINFORMATION)
+		return
+	}
+	applyDarkTitlebar(hwnd)
+	pEnableWindow.Call(hwndMain, 0)
+	pShowWindow.Call(hwnd, SW_SHOW)
+	pUpdateWindow.Call(hwnd)
+
+	var m MSG
+	for !exportSuccessDone {
+		r, _, _ := pGetMessageW.Call(uintptr(unsafe.Pointer(&m)), 0, 0, 0)
+		if int32(r) <= 0 {
+			break
+		}
+		pTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))
+		pDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
+	}
+	pEnableWindow.Call(hwndMain, 1)
+	pSetForegroundWindow.Call(hwndMain)
+}
+
+func notifyExportSuccess(path, ext string) {
+	if strings.EqualFold(ext, ".html") {
+		showHTMLExportSuccess(path)
+		return
+	}
+	msgBox("Lista esportata in "+strings.ToUpper(strings.TrimPrefix(ext, "."))+".", appTitle, MB_OK|MB_ICONINFORMATION)
 }
 
 func createIconFromICO(data []byte, desired int) uintptr {
@@ -3043,7 +3152,7 @@ func runStartupExport() {
 		msgBox("Esportazione fallita:\r\n"+err.Error(), appTitle, MB_OK|MB_ICONERROR)
 		return
 	}
-	msgBox("Lista esportata in "+strings.ToUpper(strings.TrimPrefix(ext, "."))+".", appTitle, MB_OK|MB_ICONINFORMATION)
+	notifyExportSuccess(path, ext)
 }
 
 func onSize() {
@@ -3199,7 +3308,7 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 				if err != nil {
 					msgBox("Esportazione fallita:\r\n"+err.Error(), appTitle, MB_OK|MB_ICONERROR)
 				} else {
-					msgBox("Lista esportata in "+strings.ToUpper(strings.TrimPrefix(ext, "."))+".", appTitle, MB_OK|MB_ICONINFORMATION)
+					notifyExportSuccess(p, ext)
 				}
 			}
 		case IDAddContext:
