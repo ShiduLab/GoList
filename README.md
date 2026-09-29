@@ -412,7 +412,7 @@ E in quegli anni **fare le liste era vitale**.
 
 Si scaricavano interi cataloghi di MP3, si masterizzavano CD e si smazzavano raccolte e compilation anche nel mercato nero improvvisato dei **“CD su misura”**. Il meccanismo era elementare: davi un elenco, ricevevi elenchi, qualcuno sceglieva, qualcun altro cercava ciò che mancava, poi si preparava il disco.
 
-Le notti passavano tra **IRCnet**, bot, cataloghi, scambi di liste e code di download.
+Le notti passavano tra **IRCnet**, bot, cataloghi, scambi di liste, code di download e sessioni **DCC**.
 
 La lista non era documentazione accessoria.  
 Era **interfaccia del materiale**.
@@ -438,7 +438,45 @@ Quella notte l'idea passò di mano senza perdere la sua origine.
 
 Alla mattina G0gn4 fece trovare **l'idea condivisa in forma di file**.
 
-Non più il comando da ricordare e ripetere, ma un utensile che lo facesse per chi lo stava usando.
+Ed è qui che il passaggio va capito nella sua misura reale: non “un programma in più”, ma il momento del:
+
+> **«Oooh, finalmente!»**
+
+Da quel momento bastava stare su una cartella, fare **click destro → GoList!**, e l'elenco compariva subito.
+
+Niente finestra DOS.  
+Niente comando da ridigitare.  
+Niente nuovo giro dell'altalena.
+
+Il testo usciva già nella forma utile al momento, con il tipo di nome desiderato; molto spesso serviva proprio **il percorso**, perché nelle sessioni DCC su IRC sapere e passare rapidamente *dove stava cosa* era parte del lavoro.
+
+La scorciatoia non risparmiava soltanto qualche battuta sulla tastiera. Eliminava una **micro-procedura ripetuta decine di volte** nel punto esatto in cui interrompeva il flusso.
+
+**Click destro. GoList! Lista pronta. Avanti.**
+
+Quello era il sollievo.
+
+Non automatizzare per il gusto di automatizzare: **smettere di pendolare a dondolare un task**.
+
+### GO · GO · GO
+
+C'è poi una curiosità che, ventiquattro anni dopo, si è messa a lampeggiare da sola:
+
+**GOList!**  
+fatto allora da **G0gn4**  
+e oggi rimesso in opera in **Go**.
+
+Tre **GO**.
+
+**GO + GO + GO = Go Tree.**
+
+> **Cartello — Go Tree**  
+> Tre volte GO.  
+> **Vai di albero.**
+
+Nel 2002 il nome era già **GoList!**. G0gn4 gli diede forma. Nel 2026 il restyling finisce scritto proprio in Go.
+
+Non serve inventare il gioco: era lì che aspettava di essere visto.
 
 **Dalla Notte al Giorno, da un'idea alla sua operatività.**
 
@@ -449,6 +487,7 @@ Una funzione delegata all'utensile.
 **Problem? Solved.**
 
 GoList! entrò così nella cassetta degli attrezzi ShiduLab.
+
 
 ## 2026 — Lo stesso pendolo, un altro banco
 
