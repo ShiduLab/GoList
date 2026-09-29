@@ -3450,18 +3450,55 @@ func htmlExport(path string, selected []int) error {
 
   document.getElementById('mfToggle').addEventListener('click',togglePlayback);
 
-  // Barra spaziatrice = Play/Pause del MediaFlow.
-  // La intercettiamo in capture così non resta al browser il solo "segnale"
-  // Play/Pause senza che il comando arrivi davvero al player.
+  function seekBy(seconds){
+    if(!isFinite(active.duration)||active.duration<=0){return;}
+    var target=Math.max(0,Math.min(active.duration,active.currentTime+seconds));
+    if(typeof active.fastSeek==='function'){
+      active.fastSeek(target);
+    }else{
+      active.currentTime=target;
+    }
+  }
+
+  function changeVolume(delta){
+    var v=Math.max(0,Math.min(1,active.volume+delta));
+    active.volume=v;
+    if(v>0&&active.muted){active.muted=false;}
+    rememberedVolume=active.volume;
+    rememberedMuted=active.muted;
+  }
+
+  // Tastiera MediaFlow:
+  // Space = Play/Pause
+  // ← / → = indietro / avanti di 5 secondi
+  // ↑ / ↓ = volume ±5%
+  // Tutto in capture, così il browser non mostra soltanto il proprio OSD
+  // senza applicare davvero il comando al player.
   document.addEventListener('keydown',function(ev){
     if(!overlay.classList.contains('open')){return;}
     if(ev.ctrlKey||ev.altKey||ev.metaKey){return;}
-    if(ev.code!=='Space'&&ev.key!==' '&&ev.key!=='Spacebar'){return;}
     var t=ev.target;
     if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)){return;}
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
-    if(!ev.repeat){togglePlayback();}
+
+    var handled=true;
+    if(ev.code==='Space'||ev.key===' '||ev.key==='Spacebar'){
+      if(!ev.repeat){togglePlayback();}
+    }else if(ev.key==='ArrowLeft'){
+      seekBy(-5);
+    }else if(ev.key==='ArrowRight'){
+      seekBy(5);
+    }else if(ev.key==='ArrowUp'){
+      changeVolume(0.05);
+    }else if(ev.key==='ArrowDown'){
+      changeVolume(-0.05);
+    }else{
+      handled=false;
+    }
+
+    if(handled){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+    }
   },true);
   document.getElementById('mfClose').addEventListener('click',function(){
     audio.pause();
