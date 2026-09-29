@@ -337,6 +337,12 @@ type SHELLEXECUTEINFO struct {
 	HProcess     uintptr
 }
 
+type OPENASINFO struct {
+	PcszFile    *uint16
+	PcszClass   *uint16
+	OaifInFlags uint32
+}
+
 type Entry struct {
 	Name            string `json:"name"`
 	RelativePath    string `json:"relative_path"`
@@ -491,6 +497,7 @@ var (
 	pSHBrowseForFolderW                      = shell32.NewProc("SHBrowseForFolderW")
 	pSHGetPathFromIDListW                    = shell32.NewProc("SHGetPathFromIDListW")
 	pShellExecuteExW                         = shell32.NewProc("ShellExecuteExW")
+	pSHOpenWithDialog                        = shell32.NewProc("SHOpenWithDialog")
 	pSetCurrentProcessExplicitAppUserModelID = shell32.NewProc("SetCurrentProcessExplicitAppUserModelID")
 
 	pCoInitializeEx = ole32.NewProc("CoInitializeEx")
@@ -2135,11 +2142,24 @@ func openDestinationForeground(path string) error {
 }
 
 func openWithDialog(path string) error {
-	// Il verbo ShellExecute "openas" non è affidabile sui Windows moderni:
-	// per alcuni tipi restituisce SE_ERR_NOASSOC (31). Usiamo direttamente
-	// il dialogo "Apri con..." di shell32 tramite rundll32.
-	params := "shell32.dll,OpenAs_RunDLL \"" + filepath.Clean(path) + "\""
-	return shellOpen("rundll32.exe", "open", params)
+	// Usa direttamente l'API documentata di Windows per il selettore
+	// "Apri con...". Evita sia il verbo ShellExecute "openas" sia il vecchio
+	// entry point OpenAs_RunDLL, che non sono affidabili sui Windows recenti.
+	const (
+		OAIF_ALLOW_REGISTRATION = 0x00000001
+		OAIF_EXEC               = 0x00000004
+		ERROR_CANCELLED_HRESULT = 0x800704C7
+	)
+	info := OPENASINFO{
+		PcszFile:    wptr(filepath.Clean(path)),
+		OaifInFlags: OAIF_ALLOW_REGISTRATION | OAIF_EXEC,
+	}
+	r, _, _ := pSHOpenWithDialog.Call(hwndMain, uintptr(unsafe.Pointer(&info)))
+	hr := uint32(r)
+	if hr == 0 || hr == ERROR_CANCELLED_HRESULT {
+		return nil
+	}
+	return fmt.Errorf("SHOpenWithDialog: errore 0x%08X", hr)
 }
 
 func showWindowsProperties(path string) error {
