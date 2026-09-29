@@ -3365,7 +3365,7 @@ func htmlExport(path string, selected []int) error {
     }
     updateModeButton();
     if(current){
-      now.textContent=(index+1)+' / '+queue.length+' · '+current.name+(shuffleMode?' · Shuffle':'');
+      now.textContent=current.name+' · '+(index+1)+' / '+queue.length+(shuffleMode?' · Shuffle':'');
     }
   }
   function playAt(pos){
@@ -3379,7 +3379,7 @@ func htmlExport(path string, selected []int) error {
     stopMedia(video);
 
     var el=choosePlayer(item);
-    now.textContent=(index+1)+' / '+queue.length+' · '+item.name;
+    now.textContent=item.name+' · '+(index+1)+' / '+queue.length;
     ext.href=item.href;
     el.src=item.href;
     el.volume=rememberedVolume;
