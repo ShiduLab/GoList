@@ -3274,6 +3274,35 @@ func htmlExport(path string, selected []int) error {
   var rememberedMuted=false;
   var videoExt={'.mp4':1,'.m4v':1,'.mkv':1,'.avi':1,'.mov':1,'.wmv':1,'.webm':1,'.mpeg':1,'.mpg':1,'.ts':1,'.m2ts':1,'.3gp':1};
 
+  function purgeLegacyPlayers(){
+    // Difesa esplicita contro il vecchio MediaFlow: ferma e rimuove
+    // qualsiasi motore audio/video estraneo al player corrente.
+    Array.prototype.slice.call(document.querySelectorAll('audio,video')).forEach(function(el){
+      if(el===audio||el===video){return;}
+      try{
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
+      }catch(e){}
+      var p=el;
+      while(p&&p!==document.body){
+        var isLegacyOverlay=false;
+        try{
+          var pos=window.getComputedStyle(p).position;
+          isLegacyOverlay=(pos==='fixed'||pos==='absolute');
+        }catch(e){}
+        if(isLegacyOverlay){
+          p.remove();
+          return;
+        }
+        p=p.parentElement;
+      }
+      if(el.isConnected){el.remove();}
+    });
+  }
+
+  purgeLegacyPlayers();
+
   function extension(href){
     try{
       var p=decodeURIComponent(new URL(href).pathname).toLowerCase();
@@ -3360,6 +3389,12 @@ func htmlExport(path string, selected []int) error {
     if(p&&p.catch){p.catch(function(){});}
   }
   function openFlow(clicked){
+    // Prima di ogni nuova sessione assicuriamoci che non esistano
+    // istanze residue del vecchio player.
+    purgeLegacyPlayers();
+    stopMedia(audio);
+    stopMedia(video);
+
     // La voce cliccata DEVE essere il primo elemento riprodotto.
     // Non ci affidiamo più all'indice ricavato dalla playlist: usiamo
     // direttamente l'anchor cliccato e costruiamo la coda attorno a lui.
@@ -3381,10 +3416,15 @@ func htmlExport(path string, selected []int) error {
     playAt(0);
   }
   links.forEach(function(a){
+    // Capture + stopImmediatePropagation: il nuovo MediaFlow prende possesso
+    // esclusivo del click e impedisce a eventuali handler legacy di aprire
+    // un secondo player sopra/sotto quello attuale.
     a.addEventListener('click',function(ev){
       ev.preventDefault();
+      ev.stopImmediatePropagation();
+      purgeLegacyPlayers();
       openFlow(a);
-    });
+    },true);
   });
   function next(){if(queue.length){playAt(index+1);}}
   function prev(){if(queue.length){playAt(index-1);}}
