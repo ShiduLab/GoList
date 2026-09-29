@@ -7,12 +7,12 @@ Current public build: **J.6**
 GoList! nasce come **utensile personale**: prendere una cartella, trasformarla in una lista leggibile e ordinabile, scegliere cosa mostrare, esportare il risultato e continuare a usarlo.
 
 Nel 2002 l'idea venne fatta assemblare a un compare umano, **G0gn4**.  
-Nel 2026 lo stesso utensile è tornato sul banco: stessa necessità di fondo, altri strumenti, altre possibilità. Il restyling attuale è stato sviluppato da **Josta / ShiduLab** insieme a **Scriba**, il compare Digitare.
+Nel 2026 lo stesso utensile è tornato sul banco: stessa necessità di fondo, altri strumenti, altre possibilità. Il restyling attuale è stato sviluppato da **Josta / ShiduLab** insieme a **Scriba**, il `Compare Digitare`.
 
 > Dall'utensile fatto costruire al compare umano all'utensile rimesso in carreggiata col compare digitale.  
 > Cambiano le mani attorno al banco. L'intento continua.
 
-Niente installer. Per l'uso normale non servono privilegi di amministratore.
+GoList! è portatile e non richiede installazione. Per l'uso normale non servono privilegi di amministratore.
 
 ---
 
@@ -338,7 +338,7 @@ Il lavoro di restyling è quindi ripartito dall'uso reale:
 - cosa manca mentre lo si sta usando;
 - quale attrito può essere tolto senza trasformare l'utensile in un'officina ingestibile.
 
-A quel punto accanto a Josta non c'era più soltanto un compare umano a cui spiegare cosa costruire, ma **Scriba**, compare Digitare: un LLM capace di leggere il codice, lavorare sul repository, verificare build, correggere e aggiungere funzioni mentre l'utensile veniva provato.
+A quel punto accanto a Josta non c'era più soltanto un compare umano a cui spiegare cosa costruire, ma **Scriba**, `Compare Digitare`: un LLM capace di leggere il codice, lavorare sul repository, verificare build, correggere e aggiungere funzioni mentre l'utensile veniva provato.
 
 Il passaggio non cancella quello del 2002: lo completa.
 
@@ -359,7 +359,7 @@ Nel restyling di GoList!, però, il *vibe* è soltanto l'innesco. Qui non c'è u
 
 Josta porta la necessità, immagina l'utensile, decide ciò che deve fare e riconosce nell'uso se ciò che è nato corrisponde davvero a ciò che aveva in mente. **Resta l'Orchestratore**: tiene insieme intenzione, direzione, strumenti, tempi, prove e criteri di riuscita.
 
-Scriba è il **compare Digitare**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito. Non dirige l'opera: entra nell'orchestra come strumento capace di conoscere e usare altri strumenti.
+Scriba è il **`Compare Digitare`**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito. Non dirige l'opera: entra nell'orchestra come strumento capace di conoscere e usare altri strumenti.
 
 Per questo, dentro ShiduLab, il nome più adatto è:
 
