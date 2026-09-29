@@ -92,6 +92,7 @@ const (
 	FVIRTKEY             = 0x01
 	FCONTROL             = 0x08
 	VK_0                 = 0x30
+	VK_DELETE            = 0x2E
 	VK_OEM_PLUS          = 0xBB
 	VK_OEM_MINUS         = 0xBD
 
@@ -105,6 +106,7 @@ const (
 	LVM_FIRST                    = 0x1000
 	LVM_SETBKCOLOR               = LVM_FIRST + 1
 	LVM_DELETEALLITEMS           = LVM_FIRST + 9
+	LVM_GETNEXTITEM              = LVM_FIRST + 12
 	LVM_HITTEST                  = LVM_FIRST + 18
 	LVM_GETCOLUMNWIDTH           = LVM_FIRST + 29
 	LVM_GETHEADER                = LVM_FIRST + 31
@@ -113,6 +115,7 @@ const (
 	LVM_SETCOLUMNORDERARRAY      = LVM_FIRST + 58
 	LVM_GETCOLUMNORDERARRAY      = LVM_FIRST + 59
 	LVM_SETITEMSTATE             = LVM_FIRST + 43
+	LVM_GETITEMSTATE             = LVM_FIRST + 44
 	LVM_SETTEXTCOLOR             = LVM_FIRST + 36
 	LVM_SETTEXTBKCOLOR           = LVM_FIRST + 38
 	LVM_SETITEMW                 = LVM_FIRST + 76
@@ -122,6 +125,7 @@ const (
 	LVIF_TEXT       = 0x0001
 	LVIS_FOCUSED    = 0x0001
 	LVIS_SELECTED   = 0x0002
+	LVNI_SELECTED   = 0x0002
 	LVCF_FMT        = 0x0001
 	LVCF_WIDTH      = 0x0002
 	LVCF_TEXT       = 0x0004
@@ -463,6 +467,7 @@ var (
 	pTrackPopupMenu           = user32.NewProc("TrackPopupMenu")
 	pDestroyMenu              = user32.NewProc("DestroyMenu")
 	pGetCursorPos             = user32.NewProc("GetCursorPos")
+	pGetFocus                 = user32.NewProc("GetFocus")
 	pScreenToClient           = user32.NewProc("ScreenToClient")
 	pEnumWindows              = user32.NewProc("EnumWindows")
 	pGetClassNameW            = user32.NewProc("GetClassNameW")
@@ -2063,13 +2068,40 @@ func selectedEntryAtCursor() (int, POINT, bool) {
 		return -1, screen, false
 	}
 
-	// Allinea anche la selezione visiva della ListView alla voce su cui
-	// l'utente ha aperto il menu contestuale.
-	clear := LVITEM{State: 0, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
-	pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&clear)))
-	state := LVITEM{State: LVIS_SELECTED | LVIS_FOCUSED, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
-	pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, uintptr(idx), uintptr(unsafe.Pointer(&state)))
+	// Se il click destro avviene dentro una selezione multipla già esistente,
+	// NON la distruggiamo: il menu deve agire sull'intero gruppo selezionato.
+	selected, _, _ := pSendMessageW.Call(hwndTable, LVM_GETITEMSTATE, uintptr(idx), LVIS_SELECTED)
+	if selected&LVIS_SELECTED == 0 {
+		clear := LVITEM{State: 0, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
+		pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&clear)))
+		state := LVITEM{State: LVIS_SELECTED | LVIS_FOCUSED, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
+		pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, uintptr(idx), uintptr(unsafe.Pointer(&state)))
+	} else {
+		// Mantiene tutte le selezioni, spostando soltanto il focus sulla voce cliccata.
+		clearFocus := LVITEM{State: 0, StateMask: LVIS_FOCUSED}
+		pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&clearFocus)))
+		focus := LVITEM{State: LVIS_FOCUSED, StateMask: LVIS_FOCUSED}
+		pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, uintptr(idx), uintptr(unsafe.Pointer(&focus)))
+	}
 	return idx, screen, true
+}
+
+func selectedEntryIndices() []int {
+	if hwndTable == 0 {
+		return nil
+	}
+	out := make([]int, 0, 8)
+	cur := ^uintptr(0) // -1: inizia prima della prima voce
+	for {
+		r, _, _ := pSendMessageW.Call(hwndTable, LVM_GETNEXTITEM, cur, LVNI_SELECTED)
+		idx := int(int32(r))
+		if idx < 0 {
+			break
+		}
+		out = append(out, idx)
+		cur = uintptr(idx)
+	}
+	return out
 }
 
 func shellOpen(target, verb, params string) error {
@@ -2359,15 +2391,34 @@ func webSearchForEntry(e Entry) error {
 	return shellOpen("https://www.google.com/search?q="+url.QueryEscape(q), "open", "")
 }
 
-func removeEntryFromList(idx int) {
-	if idx < 0 || idx >= len(currentEntries) {
+func removeEntriesFromList(indices []int) {
+	if len(indices) == 0 || len(currentEntries) == 0 {
 		return
 	}
-	name := currentEntries[idx].Name
-	copy(currentEntries[idx:], currentEntries[idx+1:])
-	currentEntries = currentEntries[:len(currentEntries)-1]
+	remove := make(map[int]bool, len(indices))
+	for _, idx := range indices {
+		if idx >= 0 && idx < len(currentEntries) {
+			remove[idx] = true
+		}
+	}
+	if len(remove) == 0 {
+		return
+	}
+
+	kept := make([]Entry, 0, len(currentEntries)-len(remove))
+	for i, e := range currentEntries {
+		if !remove[i] {
+			kept = append(kept, e)
+		}
+	}
+	currentEntries = kept
 	refreshTable()
-	setText(hwndStatus, "Rimossa da GoList!: "+name+" · file originale intatto.")
+
+	if len(remove) == 1 {
+		setText(hwndStatus, "1 voce rimossa da GoList! · file originale intatto.")
+	} else {
+		setText(hwndStatus, fmt.Sprintf("%d voci rimosse da GoList! · file originali intatti.", len(remove)))
+	}
 }
 
 func showEntryMenu() {
@@ -2377,6 +2428,10 @@ func showEntryMenu() {
 	}
 	e := currentEntries[idx]
 	fullPath := fullEntryPath(currentFolder, e)
+	selectedIndices := selectedEntryIndices()
+	if len(selectedIndices) == 0 {
+		selectedIndices = []int{idx}
+	}
 
 	menu, _, _ := pCreatePopupMenu.Call()
 	copyMenu, _, _ := pCreatePopupMenu.Call()
@@ -2408,7 +2463,11 @@ func showEntryMenu() {
 	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
 	pAppendMenuW.Call(menu, MF_STRING, IDEntrySearchWeb, uintptr(unsafe.Pointer(wptr("Cerca in rete"))))
 	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
-	pAppendMenuW.Call(menu, MF_STRING, IDEntryRemove, uintptr(unsafe.Pointer(wptr("Elimina voce da GoList!"))))
+	removeLabel := "Elimina voce da GoList!"
+	if len(selectedIndices) > 1 {
+		removeLabel = fmt.Sprintf("Elimina %d voci da GoList!", len(selectedIndices))
+	}
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryRemove, uintptr(unsafe.Pointer(wptr(removeLabel))))
 
 	cmd, _, _ := pTrackPopupMenu.Call(menu, TPM_RETURNCMD|TPM_RIGHTBUTTON, uintptr(int64(pt.X)), uintptr(int64(pt.Y)), 0, hwndMain, 0)
 	pDestroyMenu.Call(menu)
@@ -2438,7 +2497,7 @@ func showEntryMenu() {
 	case IDEntrySearchWeb:
 		err = webSearchForEntry(e)
 	case IDEntryRemove:
-		removeEntryFromList(idx)
+		removeEntriesFromList(selectedIndices)
 	}
 	if err != nil {
 		msgBox(err.Error(), appTitle, MB_OK|MB_ICONERROR)
@@ -3822,6 +3881,11 @@ func wndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 				setText(hwndStatus, "Menu Windows registrato.")
 				msgBox("GoList! aggiunto al menu contestuale con scorciatoie di esportazione.\r\n\r\nWindows 11 può mostrarlo sotto “Mostra altre opzioni”.", appTitle, MB_OK|MB_ICONINFORMATION)
 			}
+		case IDEntryRemove:
+			focus, _, _ := pGetFocus.Call()
+			if focus == hwndTable {
+				removeEntriesFromList(selectedEntryIndices())
+			}
 		case IDRemoveContext:
 			if contextMenuBusy {
 				break
@@ -3946,6 +4010,7 @@ func main() {
 	pUpdateWindow.Call(hwnd)
 
 	accels := []ACCEL{
+		{FVirt: FVIRTKEY, Key: VK_DELETE, Cmd: IDEntryRemove},
 		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_PLUS, Cmd: IDZoomIn},
 		{FVirt: FVIRTKEY | FCONTROL, Key: VK_OEM_MINUS, Cmd: IDZoomOut},
 		{FVirt: FVIRTKEY | FCONTROL, Key: VK_0, Cmd: IDZoomReset},
