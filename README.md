@@ -351,31 +351,41 @@ Un utensile del 2002 rimesso al lavoro nel 2026.
 
 ---
 
-## Dal Vibe Coding all'Intent-Driven Pair Engineering
+## Dal Vibe Coding all'Intent-Driven Realization
 
 Quello che oggi viene chiamato **Vibe Coding** descrive bene una parte dell'accadere: esprimere in linguaggio naturale ciò che si vuole ottenere e usare un'AI per trasformare rapidamente quell'intento in codice funzionante.
 
-Nel restyling di GoList!, però, il *vibe* è soltanto l'innesco. Il metodo che si è formato nel lavoro reale è più preciso e più vicino a una bottega a due:
+Nel restyling di GoList!, però, il *vibe* è soltanto l'innesco. Qui non c'è una co-ingegneria dell'idea: **l'idea è una, l'ingegno che la genera è uno, l'intento è autoriale**.
 
-> **Ho uno strumento che conosce gli strumenti. Io conosco l'intento.**
+Josta porta la necessità, immagina l'utensile, decide ciò che deve fare e riconosce nell'uso se ciò che è nato corrisponde davvero a ciò che aveva in mente.
+
+Scriba è il **compare Digitare**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito.
 
 Per questo, dentro ShiduLab, il nome più adatto è:
 
-### Intent-Driven Pair Engineering — Co-Ingegneria d'Intento
+### Intent-Driven Realization — Realizzazione d'Intento
 
-**Intent-Driven**, perché il centro non è il prompt né il codice: è l'intento d'uso.  
-**Pair**, perché il lavoro avviene in coppia: Josta mantiene necessità, contesto, criterio e prova sul campo; Scriba naviga strumenti e codice, implementa, integra, controlla il repository e verifica le build.  
-**Engineering**, perché ogni passaggio deve rientrare nell'utensile senza romperne il resto.
+**Intent-Driven**, perché l'origine è l'intento: non il prompt, non il modello, non il codice.  
+**Realization**, perché il passaggio decisivo è rendere reale e operabile ciò che prima esisteva come necessità, immagine mentale, gesto immaginato.  
+**Dialogica nell'esecuzione**, perché la forma finale emerge attraverso il continuo ritorno tra pensiero, implementazione e uso.
+
+> **Ho uno strumento che conosce gli strumenti. Io conosco l'intento.**
+
+Il punto non è attribuire lo stesso ingegno a entrambi. Il punto è ciò che accade quando l'ingegno incontra uno strumento capace di metterlo immediatamente alla prova nel mondo operativo.
+
+La nota più interessante sta proprio lì:
+
+> **Né io né te e tutti e due. Siamo il risultato accadente.**
+
+L'intento resta autoriale; la messa in opera è dialogica; il risultato, una volta entrato nell'uso, diventa qualcosa che nessuna delle due parti possedeva già da sola nella stessa forma.
 
 Il ciclo non è *chiedi → ricevi codice*. È:
 
-**necessità → intento → modifica → build → uso reale → osservazione → correzione → nuovo uso**
+**necessità → intento → messa in opera → build → uso reale → accadimento → osservazione → correzione → nuovo uso**
 
 È così che sono emerse molte delle funzioni del restyling. Non da una specifica scritta tutta prima, ma dall'utensile mentre tornava a lavorare: il click destro ha chiamato il menu; il test ha chiamato il multi-delete; l'HTML musicale ha chiamato MediaFlow; l'uso del player ha chiamato memoria del volume, Shuffle leggibile, HotKeys e resume.
 
-Il compare Digitare non sostituisce chi usa l'utensile e non decide cosa debba diventare. Riduce invece la distanza tra **vedere una necessità** e **provarne subito una forma funzionante**.
-
-Questa è la parentela col Vibe Coding e, insieme, la differenza: meno *vibe come delega*, più **intento condiviso, iterazione corta e verifica nell'uso**.
+Questa è la parentela col Vibe Coding e, insieme, la differenza: meno *vibe come delega*, più **intento autoriale, realizzazione immediata, iterazione corta e verifica nell'uso**.
 
 ---
 
