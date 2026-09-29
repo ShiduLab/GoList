@@ -2045,6 +2045,16 @@ func toggleColumn(i int) {
 		columnVisible[i] = false
 		pSendMessageW.Call(hwndTable, LVM_SETCOLUMNWIDTH, uintptr(i), 0)
 	} else {
+		// A newly enabled attribute always enters at the far right of the
+		// currently visible columns. The user can then drag it wherever desired.
+		ensureColumnOrder()
+		for pos, x := range columnOrder {
+			if int(x) == i {
+				copy(columnOrder[pos:], columnOrder[pos+1:])
+				columnOrder[len(columnOrder)-1] = int32(i)
+				break
+			}
+		}
 		columnVisible[i] = true
 		w := columnSavedWidths[i]
 		if w < 30 || w > 2000 {
