@@ -76,6 +76,7 @@ const (
 	OFN_PATHMUSTEXIST    = 0x00000800
 	GMEM_MOVEABLE        = 0x0002
 	CF_UNICODETEXT       = 13
+	CF_HDROP             = 15
 	MF_STRING            = 0x00000000
 	MF_CHECKED           = 0x00000008
 	MF_POPUP             = 0x00000010
@@ -104,12 +105,14 @@ const (
 	LVM_FIRST                    = 0x1000
 	LVM_SETBKCOLOR               = LVM_FIRST + 1
 	LVM_DELETEALLITEMS           = LVM_FIRST + 9
+	LVM_HITTEST                  = LVM_FIRST + 18
 	LVM_GETCOLUMNWIDTH           = LVM_FIRST + 29
 	LVM_GETHEADER                = LVM_FIRST + 31
 	LVM_SETCOLUMNWIDTH           = LVM_FIRST + 30
 	LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54
 	LVM_SETCOLUMNORDERARRAY      = LVM_FIRST + 58
 	LVM_GETCOLUMNORDERARRAY      = LVM_FIRST + 59
+	LVM_SETITEMSTATE             = LVM_FIRST + 43
 	LVM_SETTEXTCOLOR             = LVM_FIRST + 36
 	LVM_SETTEXTBKCOLOR           = LVM_FIRST + 38
 	LVM_SETITEMW                 = LVM_FIRST + 76
@@ -117,6 +120,8 @@ const (
 	LVM_INSERTCOLUMNW            = LVM_FIRST + 97
 
 	LVIF_TEXT       = 0x0001
+	LVIS_FOCUSED    = 0x0001
+	LVIS_SELECTED   = 0x0002
 	LVCF_FMT        = 0x0001
 	LVCF_WIDTH      = 0x0002
 	LVCF_TEXT       = 0x0004
@@ -160,8 +165,19 @@ const (
 	IDZoomIn         = 3300
 	IDZoomOut        = 3301
 	IDZoomReset      = 3302
-	IDExportOpen     = 3400
-	IDExportClose    = 3401
+	IDExportOpen       = 3400
+	IDExportClose      = 3401
+	IDEntryOpen        = 3500
+	IDEntryDestination = 3501
+	IDEntryOpenWith    = 3502
+	IDEntryDetails     = 3503
+	IDEntryProperties  = 3504
+	IDEntryCopyFile    = 3510
+	IDEntryCopyName    = 3511
+	IDEntryCopyPath    = 3512
+	IDEntryCopyRow     = 3513
+	IDEntrySearchWeb   = 3520
+	IDEntryRemove      = 3530
 )
 
 type WNDCLASSEX struct {
@@ -287,6 +303,39 @@ type NMLISTVIEW struct {
 	LParam    uintptr
 }
 
+type LVHITTESTINFO struct {
+	Pt       POINT
+	Flags    uint32
+	IItem    int32
+	ISubItem int32
+	IGroup   int32
+}
+
+type DROPFILES struct {
+	PFiles uint32
+	Pt     POINT
+	FNC    int32
+	FWide  int32
+}
+
+type SHELLEXECUTEINFO struct {
+	CbSize       uint32
+	FMask        uint32
+	Hwnd         uintptr
+	LpVerb       *uint16
+	LpFile       *uint16
+	LpParameters *uint16
+	LpDirectory  *uint16
+	NShow        int32
+	HInstApp     uintptr
+	LpIDList     uintptr
+	LpClass      *uint16
+	HkeyClass    uintptr
+	DwHotKey     uint32
+	HIcon        uintptr
+	HProcess     uintptr
+}
+
 type Entry struct {
 	Name            string `json:"name"`
 	RelativePath    string `json:"relative_path"`
@@ -406,6 +455,7 @@ var (
 	pTrackPopupMenu           = user32.NewProc("TrackPopupMenu")
 	pDestroyMenu              = user32.NewProc("DestroyMenu")
 	pGetCursorPos             = user32.NewProc("GetCursorPos")
+	pScreenToClient           = user32.NewProc("ScreenToClient")
 	pSetWindowLongPtrW        = user32.NewProc("SetWindowLongPtrW")
 	pCallWindowProcW          = user32.NewProc("CallWindowProcW")
 	pCreateIconFromResourceEx = user32.NewProc("CreateIconFromResourceEx")
@@ -422,6 +472,7 @@ var (
 	pGlobalAlloc      = kernel32.NewProc("GlobalAlloc")
 	pGlobalLock       = kernel32.NewProc("GlobalLock")
 	pGlobalUnlock     = kernel32.NewProc("GlobalUnlock")
+	pGlobalFree       = kernel32.NewProc("GlobalFree")
 
 	pRegCreateKeyExW = advapi32.NewProc("RegCreateKeyExW")
 	pRegSetValueExW  = advapi32.NewProc("RegSetValueExW")
@@ -434,6 +485,7 @@ var (
 	pShellExecuteW                           = shell32.NewProc("ShellExecuteW")
 	pSHBrowseForFolderW                      = shell32.NewProc("SHBrowseForFolderW")
 	pSHGetPathFromIDListW                    = shell32.NewProc("SHGetPathFromIDListW")
+	pShellExecuteExW                         = shell32.NewProc("ShellExecuteExW")
 	pSetCurrentProcessExplicitAppUserModelID = shell32.NewProc("SetCurrentProcessExplicitAppUserModelID")
 
 	pCoInitializeEx = ole32.NewProc("CoInitializeEx")
@@ -455,6 +507,8 @@ var (
 	hwndMain, hwndPath, hwndTable, hwndHeader, hwndRecursive, hwndStatus, hwndBrand, hwndHint uintptr
 	oldHeaderWndProc                                                                          uintptr
 	headerWndProcCallback                                                                     uintptr
+	oldTableWndProc                                                                           uintptr
+	tableWndProcCallback                                                                      uintptr
 	currentFolder                                                                             string
 	currentEntries                                                                            []Entry
 	currentText                                                                               string
@@ -1986,6 +2040,255 @@ func headerWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	return r
 }
 
+func tableWndProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
+	if msg == WM_RBUTTONUP {
+		showEntryMenu()
+		return 0
+	}
+	r, _, _ := pCallWindowProcW.Call(oldTableWndProc, hwnd, uintptr(msg), wParam, lParam)
+	return r
+}
+
+func selectedEntryAtCursor() (int, POINT, bool) {
+	var screen POINT
+	pGetCursorPos.Call(uintptr(unsafe.Pointer(&screen)))
+	client := screen
+	pScreenToClient.Call(hwndTable, uintptr(unsafe.Pointer(&client)))
+	hit := LVHITTESTINFO{Pt: client, IItem: -1, ISubItem: -1}
+	r, _, _ := pSendMessageW.Call(hwndTable, LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hit)))
+	idx := int(int32(r))
+	if idx < 0 || idx >= len(currentEntries) {
+		return -1, screen, false
+	}
+
+	// Allinea anche la selezione visiva della ListView alla voce su cui
+	// l'utente ha aperto il menu contestuale.
+	clear := LVITEM{State: 0, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
+	pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&clear)))
+	state := LVITEM{State: LVIS_SELECTED | LVIS_FOCUSED, StateMask: LVIS_SELECTED | LVIS_FOCUSED}
+	pSendMessageW.Call(hwndTable, LVM_SETITEMSTATE, uintptr(idx), uintptr(unsafe.Pointer(&state)))
+	return idx, screen, true
+}
+
+func shellOpen(target, verb, params string) error {
+	var verbPtr, paramsPtr uintptr
+	if verb != "" {
+		verbPtr = uintptr(unsafe.Pointer(wptr(verb)))
+	}
+	if params != "" {
+		paramsPtr = uintptr(unsafe.Pointer(wptr(params)))
+	}
+	r, _, _ := pShellExecuteW.Call(
+		hwndMain,
+		verbPtr,
+		uintptr(unsafe.Pointer(wptr(target))),
+		paramsPtr,
+		0,
+		SW_SHOWNORMAL,
+	)
+	if r <= 32 {
+		return fmt.Errorf("ShellExecuteW: errore %d", r)
+	}
+	return nil
+}
+
+func showWindowsProperties(path string) error {
+	const SEE_MASK_INVOKEIDLIST = 0x0000000c
+	sei := SHELLEXECUTEINFO{
+		FMask: SEE_MASK_INVOKEIDLIST,
+		Hwnd: hwndMain,
+		LpVerb: wptr("properties"),
+		LpFile: wptr(path),
+		NShow: SW_SHOWNORMAL,
+	}
+	sei.CbSize = uint32(unsafe.Sizeof(sei))
+	r, _, _ := pShellExecuteExW.Call(uintptr(unsafe.Pointer(&sei)))
+	if r == 0 {
+		return fmt.Errorf("ShellExecuteExW non ha aperto le proprietà")
+	}
+	return nil
+}
+
+func copyFileObject(path string) error {
+	chars := syscall.StringToUTF16(filepath.Clean(path))
+	chars = append(chars, 0) // DROPFILES richiede una lista UTF-16 terminata da doppio NUL.
+	off := unsafe.Sizeof(DROPFILES{})
+	sz := off + uintptr(len(chars)*2)
+	h, _, _ := pGlobalAlloc.Call(GMEM_MOVEABLE, sz)
+	if h == 0 {
+		return fmt.Errorf("GlobalAlloc fallita")
+	}
+	ptr, _, _ := pGlobalLock.Call(h)
+	if ptr == 0 {
+		pGlobalFree.Call(h)
+		return fmt.Errorf("GlobalLock fallita")
+	}
+	df := (*DROPFILES)(unsafe.Pointer(ptr))
+	df.PFiles = uint32(off)
+	df.FWide = 1
+	for i, ch := range chars {
+		*(*uint16)(unsafe.Pointer(ptr + off + uintptr(i*2))) = ch
+	}
+	pGlobalUnlock.Call(h)
+
+	if r, _, _ := pOpenClipboard.Call(hwndMain); r == 0 {
+		pGlobalFree.Call(h)
+		return fmt.Errorf("impossibile aprire gli appunti")
+	}
+	defer pCloseClipboard.Call()
+	pEmptyClipboard.Call()
+	if r, _, _ := pSetClipboardData.Call(CF_HDROP, h); r == 0 {
+		pGlobalFree.Call(h)
+		return fmt.Errorf("impossibile copiare il file negli appunti")
+	}
+	// Dopo SetClipboardData riuscita l'handle appartiene a Windows.
+	return nil
+}
+
+func entryRowText(e Entry) string {
+	selected := visibleColumnsInOrder()
+	parts := make([]string, 0, len(selected))
+	for _, col := range selected {
+		parts = append(parts, columns[col].Title+": "+exportCell(e, col))
+	}
+	return strings.Join(parts, " | ")
+}
+
+func entryDetailsText(e Entry) string {
+	pairs := []struct{ k, v string }{
+		{"Nome", e.Name},
+		{"Titolo", e.Title},
+		{"Artista", e.Artist},
+		{"Album", e.Album},
+		{"Durata", formatDuration(e.DurationSeconds)},
+		{"Campionato da", e.SampledBy},
+		{"Anno", e.Year},
+		{"Traccia", e.Track},
+		{"Genere", e.Genre},
+		{"Commento", e.Comment},
+		{"Artista album", e.AlbumArtist},
+		{"Compositore", e.Composer},
+		{"Numero disco", e.DiscNumber},
+		{"Editore", e.Publisher},
+		{"Copyright", e.Copyright},
+		{"ISRC", e.ISRC},
+		{"ID3", e.TagVersion},
+		{"Extra ID3", e.ExtraID3},
+		{"Tipo", e.Kind},
+		{"Dimensione", tableCell(e, 19)},
+		{"Creato", e.Created},
+		{"Modificato", e.Modified},
+		{"Percorso", fullEntryPath(currentFolder, e)},
+	}
+	var b strings.Builder
+	for _, p := range pairs {
+		if strings.TrimSpace(p.v) == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteString("\r\n")
+		}
+		b.WriteString(p.k)
+		b.WriteString(": ")
+		b.WriteString(p.v)
+	}
+	return b.String()
+}
+
+func webSearchForEntry(e Entry) error {
+	q := strings.TrimSpace(strings.TrimSpace(e.Artist + " " + e.Title))
+	if q == "" {
+		q = strings.TrimSpace(strings.TrimSuffix(e.Name, filepath.Ext(e.Name)))
+	}
+	if q == "" {
+		q = e.Name
+	}
+	return shellOpen("https://www.google.com/search?q="+url.QueryEscape(q), "open", "")
+}
+
+func removeEntryFromList(idx int) {
+	if idx < 0 || idx >= len(currentEntries) {
+		return
+	}
+	name := currentEntries[idx].Name
+	copy(currentEntries[idx:], currentEntries[idx+1:])
+	currentEntries = currentEntries[:len(currentEntries)-1]
+	refreshTable()
+	setText(hwndStatus, "Rimossa da GoList!: "+name+" · file originale intatto.")
+}
+
+func showEntryMenu() {
+	idx, pt, ok := selectedEntryAtCursor()
+	if !ok {
+		return
+	}
+	e := currentEntries[idx]
+	fullPath := fullEntryPath(currentFolder, e)
+
+	menu, _, _ := pCreatePopupMenu.Call()
+	copyMenu, _, _ := pCreatePopupMenu.Call()
+	if menu == 0 || copyMenu == 0 {
+		if menu != 0 {
+			pDestroyMenu.Call(menu)
+		}
+		if copyMenu != 0 {
+			pDestroyMenu.Call(copyMenu)
+		}
+		return
+	}
+
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryOpen, uintptr(unsafe.Pointer(wptr("Apri file"))))
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryDestination, uintptr(unsafe.Pointer(wptr("Apri destinazione"))))
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryOpenWith, uintptr(unsafe.Pointer(wptr("Apri con..."))))
+	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryDetails, uintptr(unsafe.Pointer(wptr("Dettagli"))))
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryProperties, uintptr(unsafe.Pointer(wptr("Proprietà Windows"))))
+	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
+
+	pAppendMenuW.Call(copyMenu, MF_STRING, IDEntryCopyFile, uintptr(unsafe.Pointer(wptr("Copia file"))))
+	pAppendMenuW.Call(copyMenu, MF_STRING, IDEntryCopyName, uintptr(unsafe.Pointer(wptr("Copia nome"))))
+	pAppendMenuW.Call(copyMenu, MF_STRING, IDEntryCopyPath, uintptr(unsafe.Pointer(wptr("Copia percorso"))))
+	pAppendMenuW.Call(copyMenu, MF_STRING, IDEntryCopyRow, uintptr(unsafe.Pointer(wptr("Copia voce"))))
+	pAppendMenuW.Call(menu, MF_POPUP, copyMenu, uintptr(unsafe.Pointer(wptr("Copia"))))
+
+	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
+	pAppendMenuW.Call(menu, MF_STRING, IDEntrySearchWeb, uintptr(unsafe.Pointer(wptr("Cerca in rete"))))
+	pAppendMenuW.Call(menu, MF_SEPARATOR, 0, 0)
+	pAppendMenuW.Call(menu, MF_STRING, IDEntryRemove, uintptr(unsafe.Pointer(wptr("Elimina voce da GoList!"))))
+
+	cmd, _, _ := pTrackPopupMenu.Call(menu, TPM_RETURNCMD|TPM_RIGHTBUTTON, uintptr(int64(pt.X)), uintptr(int64(pt.Y)), 0, hwndMain, 0)
+	pDestroyMenu.Call(menu)
+
+	var err error
+	switch int(cmd) {
+	case IDEntryOpen:
+		err = shellOpen(fullPath, "open", "")
+	case IDEntryDestination:
+		err = shellOpen("explorer.exe", "open", "/select,\""+fullPath+"\"")
+	case IDEntryOpenWith:
+		err = shellOpen(fullPath, "openas", "")
+	case IDEntryDetails:
+		msgBox(entryDetailsText(e), "Dettagli · "+e.Name, MB_OK|MB_ICONINFORMATION)
+	case IDEntryProperties:
+		err = showWindowsProperties(fullPath)
+	case IDEntryCopyFile:
+		err = copyFileObject(fullPath)
+	case IDEntryCopyName:
+		err = copyClipboard(e.Name)
+	case IDEntryCopyPath:
+		err = copyClipboard(fullPath)
+	case IDEntryCopyRow:
+		err = copyClipboard(entryRowText(e))
+	case IDEntrySearchWeb:
+		err = webSearchForEntry(e)
+	case IDEntryRemove:
+		removeEntryFromList(idx)
+	}
+	if err != nil {
+		msgBox(err.Error(), appTitle, MB_OK|MB_ICONERROR)
+	}
+}
+
 func showColumnMenu() {
 	if hwndTable == 0 {
 		return
@@ -2111,12 +2414,15 @@ func setupTable() {
 		pSendMessageW.Call(hwndTable, LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(w))
 	}
 
+	tableWndProcCallback = syscall.NewCallback(tableWndProc)
+	idx := int32(GWLP_WNDPROC)
+	oldTableWndProc, _, _ = pSetWindowLongPtrW.Call(hwndTable, uintptr(idx), tableWndProcCallback)
+
 	h, _, _ := pSendMessageW.Call(hwndTable, LVM_GETHEADER, 0, 0)
 	hwndHeader = h
 	if hwndHeader != 0 {
 		applyDarkControl(hwndHeader, "SysHeader32")
 		headerWndProcCallback = syscall.NewCallback(headerWndProc)
-		idx := int32(GWLP_WNDPROC)
 		oldHeaderWndProc, _, _ = pSetWindowLongPtrW.Call(hwndHeader, uintptr(idx), headerWndProcCallback)
 	}
 	applyResultFont(hwndTable)
