@@ -357,9 +357,9 @@ Quello che oggi viene chiamato **Vibe Coding** descrive bene una parte dell'acca
 
 Nel restyling di GoList!, però, il *vibe* è soltanto l'innesco. Qui non c'è una co-ingegneria dell'idea: **l'idea è una, l'ingegno che la genera è uno, l'intento è autoriale**.
 
-Josta porta la necessità, immagina l'utensile, decide ciò che deve fare e riconosce nell'uso se ciò che è nato corrisponde davvero a ciò che aveva in mente.
+Josta porta la necessità, immagina l'utensile, decide ciò che deve fare e riconosce nell'uso se ciò che è nato corrisponde davvero a ciò che aveva in mente. **Resta l'Orchestratore**: tiene insieme intenzione, direzione, strumenti, tempi, prove e criteri di riuscita.
 
-Scriba è il **compare Digitare**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito.
+Scriba è il **compare Digitare**: prende quell'intento, attraversa strumenti e codice, lo mette in pratica, integra, corregge, verifica build e restituisce una forma funzionante da provare subito. Non dirige l'opera: entra nell'orchestra come strumento capace di conoscere e usare altri strumenti.
 
 Per questo, dentro ShiduLab, il nome più adatto è:
 
@@ -371,7 +371,7 @@ Per questo, dentro ShiduLab, il nome più adatto è:
 
 > **Ho uno strumento che conosce gli strumenti. Io conosco l'intento.**
 
-Il punto non è attribuire lo stesso ingegno a entrambi. Il punto è ciò che accade quando l'ingegno incontra uno strumento capace di metterlo immediatamente alla prova nel mondo operativo.
+Il punto non è attribuire lo stesso ingegno a entrambi. **L'ingegno e la regia restano dell'Orchestratore.** Il punto è ciò che accade quando quell'ingegno incontra uno strumento capace di metterlo immediatamente alla prova nel mondo operativo.
 
 La nota più interessante sta proprio lì:
 
