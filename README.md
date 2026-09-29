@@ -311,25 +311,71 @@ Per compilare dal sorgente, mantenere gli asset nei relativi percorsi oppure agg
 
 # Storia del Restyling
 
-## 2002 — L'utensile
+## 2002 — Prima del programma c'era una noia ripetuta
 
 La partenza non fu: *facciamo un programma*.
 
-Fu: **mi serve questo utensile**.
+Fu molto più terra-terra:
 
-L'idea era personale e concreta: leggere il contenuto di una cartella, ordinarlo, trasformarlo in elenco ed esportarlo in una forma utile. Nel 2002 quell'idea venne descritta a un compare umano, **G0gn4**, che la tradusse in programma.
+**mi sono stufato di rifare sempre la stessa cosa.**
 
-L'intento apparteneva all'uso; la costruzione richiedeva un altro paio di mani.
+Per ottenere al volo l'elenco dei file di una cartella bastava aprire una finestra DOS e digitare:
+
+```bat
+dir /b > lista.txt
+```
+
+Funzionava. Ma bisognava rifarlo, cartella dopo cartella, volta dopo volta.
+
+E in quegli anni **fare le liste era vitale**.
+
+Si scaricavano interi cataloghi di MP3, si masterizzavano CD e si smazzavano raccolte e compilation anche nel mercato nero improvvisato dei **“CD su misura”**. Il meccanismo era elementare: davi un elenco, ricevevi elenchi, qualcuno sceglieva, qualcun altro cercava ciò che mancava, poi si preparava il disco.
+
+Le notti passavano tra **IRCnet**, bot, cataloghi, scambi di liste e code di download.
+
+La lista non era documentazione accessoria.  
+Era **interfaccia del materiale**.
+
+Sapere cosa avevi, cosa mancava, cosa potevi passare a qualcun altro e cosa qualcun altro poteva passare a te dipendeva da quegli elenchi.
+
+Il problema era che generarli continuava a essere un gesto banalissimo e ripetitivo.
+
+Un pendolo.
+
+Apri DOS.  
+Digita il comando.  
+Genera la lista.  
+Cambia cartella.  
+Ripeti.
+
+A un certo punto l'idea venne detta a **G0gn4**, compare umano e programmatore, più o meno così:
+
+> **«G0gn4, ho sta roba che è un pendolo, non può andare da solo?  
+> Facciamo in modo che non sia un'altalena: ogni giro una spinta... anche basta.»**
+
+Quella notte l'idea passò di mano senza perdere la sua origine.
+
+Alla mattina G0gn4 fece trovare **l'idea condivisa in forma di file**.
+
+Non più il comando da ricordare e ripetere, ma un utensile che lo facesse per chi lo stava usando.
+
+**Dalla Notte al Giorno, da un'idea alla sua operatività.**
+
+Una necessità osservata.  
+Un gesto ripetitivo riconosciuto.  
+Una funzione delegata all'utensile.
+
+**Problem? Solved.**
 
 GoList! entrò così nella cassetta degli attrezzi ShiduLab.
 
-## 2026 — Rimetterlo in carreggiata
+## 2026 — Lo stesso pendolo, un altro banco
 
-Ventiquattro anni dopo la necessità di fondo era ancora riconoscibile.
+Ventiquattro anni dopo la necessità di fondo era ancora perfettamente riconoscibile.
 
 Non serviva inventare un altro oggetto: serviva **riprendere lo stesso utensile con le skill disponibili oggi**.
 
-Il lavoro di restyling è quindi ripartito dall'uso reale:
+Il lavoro di restyling è ripartito ancora una volta dall'uso reale:
 
 - cosa deve restare immediatamente visibile;
 - cosa deve poter essere ordinato;
@@ -338,13 +384,23 @@ Il lavoro di restyling è quindi ripartito dall'uso reale:
 - cosa manca mentre lo si sta usando;
 - quale attrito può essere tolto senza trasformare l'utensile in un'officina ingestibile.
 
-A quel punto accanto a Josta non c'era più soltanto un compare umano a cui spiegare cosa costruire, ma **Scriba**, compare Digitare: un LLM capace di leggere il codice, lavorare sul repository, verificare build, correggere e aggiungere funzioni mentre l'utensile veniva provato.
+Nel 2002 Josta descriveva il bisogno a G0gn4 e aspettava di vedere quale forma operativa ne sarebbe uscita.
 
-Il passaggio non cancella quello del 2002: lo completa.
+Nel 2026 il pendolo torna, ma la distanza tra **idea → prova → correzione → nuova prova** si accorcia drasticamente. Accanto all'Orchestratore c'è **Scriba, compare Digitare**: un LLM capace di leggere il codice, lavorare sul repository, integrare modifiche, verificare build e rimettere immediatamente il risultato davanti all'uso.
 
-**Stessa idea → altro tempo → altri strumenti → stesso utensile personale ancora in funzione.**
+Il passaggio non cancella quello del 2002: lo continua sulla stessa traiettoria.
 
-Il metodo del restyling è rimasto pratico: usare, vedere, correggere, usare ancora. Molte funzioni sono nate proprio nel momento in cui la necessità si è presentata durante l'uso: menu contestuali, export apribile subito, GoPlayList!, cancellazione multipla, MediaFlow, volume persistente, Shuffle leggibile, nome della cartella in testata, HotKeys.
+**Stessa necessità → stesso intento → altri strumenti → altro tempo di risposta.**
+
+Il metodo del restyling è rimasto pratico: usare, vedere, correggere, usare ancora. Molte funzioni sono nate proprio mentre l'utensile veniva adoperato: menu contestuali, export apribile subito, GoPlayList!, cancellazione multipla, MediaFlow, volume persistente, Shuffle leggibile, nome della cartella in testata, HotKeys.
+
+Nel 2002 una notte separava l'idea dal file.
+
+Nel 2026 quella stessa distanza può ridursi a pochi rimbalzi tra intenzione, codice, build e prova.
+
+Ma il gesto originario è identico:
+
+**c'è una cosa ripetitiva che può smettere di chiedere una spinta a ogni giro.**
 
 Non un rifacimento archeologico.  
 Un utensile del 2002 rimesso al lavoro nel 2026.
