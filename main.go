@@ -3236,7 +3236,7 @@ func htmlExport(path string, selected []int) error {
 	b.WriteString("<div class=\"footer\"><span>ShiduLab 2002 - 2026</span><a class=\"botolo-link\" href=\"https://github.com/ShiduLab/GoList\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"GoList! Help / Repository\" aria-label=\"Apri il repository e Help di GoList!\"><img alt=\"Botolo GoList! Help\" src=\"data:image/png;base64," + logo + "\"></a></div>")
 	b.WriteString(`<div id="mfOverlay" class="mf-overlay">
 <div class="mf-box">
-<div class="mf-title">GoList! MediaFlow</div>
+<div class="mf-title">GoList! MidiaFlowᴶ</div>
 <div id="mfNow" class="mf-now"></div>
 <div id="mfHint" class="mf-hint"></div>
 <audio id="mfAudio" controls preload="metadata"></audio>
@@ -3249,6 +3249,7 @@ func htmlExport(path string, selected []int) error {
 <button type="button" id="mfMode" aria-pressed="false">Mode: Sequenza</button>
 <a id="mfExternal" href="#">Apri esterno</a>
 <button type="button" id="mfClose">Chiudi</button>
+<a id="mfRepo" href="#" title="Apri posizione del file">REPO!</a>
 </div>
 </div>
 </div>
@@ -3271,6 +3272,7 @@ func htmlExport(path string, selected []int) error {
   var audioB=document.getElementById('mfAudioB');
   var video=document.getElementById('mfVideo');
   var ext=document.getElementById('mfExternal');
+  var repo=document.getElementById('mfRepo');
   var index=0;
   var queue=[];
   var baseQueue=[];
@@ -3446,6 +3448,8 @@ func htmlExport(path string, selected []int) error {
     if(!item){return;}
     var rateLabel=rememberedRate===1?'':' · '+rememberedRate.toFixed(1)+'×';
     now.textContent=item.name+' · '+(index+1)+' / '+queue.length+(shuffleMode?' · Shuffle':'')+rateLabel;
+    repo.href='golist://repo?href='+encodeURIComponent(item.href);
+    repo.title='Apri posizione di '+item.name;
   }
   function updateModeButton(){
     modeButton.textContent=shuffleMode?'Mode: Shuffle':'Mode: Sequenza';
@@ -3592,7 +3596,7 @@ func htmlExport(path string, selected []int) error {
     // Prima sessione: la voce cliccata parte per prima e costruisce la coda.
     stopAllMedia();
     var others=media.filter(function(x){return x.href!==clickedItem.href;});
-    if(media.length>1&&window.confirm('GoList! MediaFlow\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
+    if(media.length>1&&window.confirm('GoList! MidiaFlowᴶ\n\nTrovati '+media.length+' file multimediali.\nVuoi metterli in circolo direttamente nella pagina?')){
       baseQueue=[clickedItem].concat(others);
     }else{
       baseQueue=[clickedItem];
@@ -3717,7 +3721,7 @@ func htmlExport(path string, selected []int) error {
         if(!blob){flashHint('Screenshot non disponibile');return;}
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='GoList-MediaFlow-'+Date.now()+'.png';
+        a.download='GoList-MidiaFlowJ-'+Date.now()+'.png';
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -4352,6 +4356,83 @@ func removeContextMenu() error {
 	return nil
 }
 
+func registerMidiaFlowRepoProtocol() error {
+	exePath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	exePath, _ = filepath.Abs(exePath)
+
+	base := `HKCU\Software\Classes\golist`
+	if err := regSetStringHKCU(base, "", "URL:GoList! MidiaFlow REPO!"); err != nil {
+		return err
+	}
+	if err := regSetStringHKCU(base, "URL Protocol", ""); err != nil {
+		return err
+	}
+	if err := regSetStringHKCU(base+`\DefaultIcon`, "", `"`+exePath+`",0`); err != nil {
+		return err
+	}
+	return regSetStringHKCU(base+`\shell\open\command`, "", `"`+exePath+`" "%1"`)
+}
+
+func repoPathFromProtocol(raw string) (string, error) {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return "", err
+	}
+	if !strings.EqualFold(u.Scheme, "golist") || !strings.EqualFold(u.Host, "repo") {
+		return "", fmt.Errorf("comando REPO! non riconosciuto")
+	}
+
+	href := strings.TrimSpace(u.Query().Get("href"))
+	if href == "" {
+		return "", fmt.Errorf("REPO!: percorso mancante")
+	}
+	fu, err := url.Parse(href)
+	if err != nil {
+		return "", err
+	}
+	if !strings.EqualFold(fu.Scheme, "file") {
+		return "", fmt.Errorf("REPO!: è consentito solo un file locale")
+	}
+
+	p := fu.Path
+	if fu.Host != "" {
+		p = `\\` + fu.Host + filepath.FromSlash(p)
+	} else {
+		if len(p) >= 3 && p[0] == '/' && p[2] == ':' {
+			p = p[1:]
+		}
+		p = filepath.FromSlash(p)
+	}
+	p = filepath.Clean(p)
+	if _, err := os.Stat(p); err != nil {
+		return "", fmt.Errorf("REPO!: %w", err)
+	}
+	return p, nil
+}
+
+func handleRepoProtocolArgs(args []string) (bool, error) {
+	for _, arg := range args {
+		if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(arg)), "golist://") {
+			continue
+		}
+		path, err := repoPathFromProtocol(arg)
+		if err != nil {
+			return true, err
+		}
+		if err := openDestinationForeground(path); err != nil {
+			return true, err
+		}
+		// Explorer nasce in modo asincrono: lasciamo al worker il tempo di
+		// individuare la nuova CabinetWClass e portarla davanti al browser.
+		time.Sleep(2700 * time.Millisecond)
+		return true, nil
+	}
+	return false, nil
+}
+
 func runStartupExport() {
 	format := strings.ToLower(strings.TrimSpace(startupExportFormat))
 	if format == "" || currentFolder == "" || len(currentEntries) == 0 {
@@ -4652,6 +4733,15 @@ func main() {
 	pInitCommonControlsEx.Call(uintptr(unsafe.Pointer(&icc)))
 
 	args := os.Args[1:]
+	// MidiaFlowᴶ usa golist://repo per chiedere a GoList! di aprire Explorer
+	// sul file in riproduzione. La registrazione è per-user e non richiede admin.
+	_ = registerMidiaFlowRepoProtocol()
+	if handled, err := handleRepoProtocolArgs(args); handled {
+		if err != nil {
+			msgBox(err.Error(), appTitle, MB_OK|MB_ICONERROR)
+		}
+		return
+	}
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--folder":
